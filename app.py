@@ -8,7 +8,7 @@ import gerenciador_dados
 import motor_truco
 
 # ==============================================================================
-# 💾 1ª PARTE: INICIALIZAÇÃO DE DADOS PERSISTENTES (ANTI-RESET DE PÁGINA)
+# 💾 1ª PARTE: INICIALIZAÇÃO DE DADOS PERSISTENTES E SINCRONIZAÇÃO SÓLIDA
 # ==============================================================================
 dados_persistidos = gerenciador_dados.carregar_dados()
 
@@ -20,7 +20,7 @@ if 'dados' not in st.session_state:
             'NomeTorneio': '', 'Status': 'Configuração',
             'Jogadores': [], 'RodadaAtual': 0, 'Rodadas': [],
             'TempoLimiteMinutos': 45,  
-            'Cronometro': {'TempoRestanteSegundos': 2700, 'Ativo': False, 'FimRodada': False},
+            'Cronometro': {'TempoRestanteSegundos': 2700, 'Ativo': False, 'FimRodada': False, 'TimestampInicio': None},
             'HistoricoCampeoes': []
         }
 else:
@@ -29,19 +29,20 @@ else:
 
 dados = st.session_state.dados
 
-# Validação e consistência de chaves estruturais
+# Garante consistência absoluta de chaves estruturais pós-carregamento
 if 'TempoLimiteMinutos' not in dados: dados['TempoLimiteMinutos'] = 45
-if 'Cronometro' not in dados: dados['Cronometro'] = {'TempoRestanteSegundos': 2700, 'Ativo': False, 'FimRodada': False}
+if 'Cronometro' not in dados: dados['Cronometro'] = {'TempoRestanteSegundos': 2700, 'Ativo': False, 'FimRodada': False, 'TimestampInicio': None}
 if 'tela_telao' not in st.session_state: st.session_state.tela_telao = "jogos"
+if 'pagina_mesas' not in st.session_state: st.session_state.pagina_mesas = 0
 if 'HistoricoCampeoes' not in dados: dados['HistoricoCampeoes'] = []
 
-# 🔐 CONTROLE DE ACESSO CORPORATIVO
+# CONTROLE DE ACESSO CORPORATIVO
 if 'perfil_usuario' not in st.session_state:
     st.session_state.perfil_usuario = "Público"
 
-# 🃏 CONFIGURAÇÃO E TEMA DA INTERFACE
+# CONFIGURAÇÃO DA INTERFACE DO ESTADO DO STREAMLIT
 st.set_page_config(
-    page_title="Central de Torneios de Truco - Planta Baixa",
+    page_title="Central de Torneios de Truco - Arena",
     page_icon="🃏",
     layout="wide"
 )
@@ -63,13 +64,12 @@ st.markdown(carregar_estilo_premium(), unsafe_allow_html=True)
 
 modo_telao = (st.session_state.perfil_usuario == "Telão")
 
-# Injeção global de CSS com remoção forçada de barras de rolagem no modo telão
+# Injeção dinâmica de CSS com remoção agressiva de barras de rolagem para o Telão
 estilos_css = ""
 if os.path.exists("estilo.css"):
     with open("estilo.css", "r", encoding="utf-8") as f:
         estilos_css = f.read()
 
-# CSS customizado contra rolagem de página para o Modo Telão
 css_anti_rolagem = ""
 if modo_telao:
     css_anti_rolagem = """
@@ -77,12 +77,12 @@ if modo_telao:
         max-height: 100vh !important;
         overflow-y: hidden !important;
         overflow-x: hidden !important;
-        padding-top: 1rem !important;
+        padding-top: 0.3rem !important;
         padding-bottom: 0px !important;
     }
     .mesa-container {
-        padding: 8px !important;
-        margin-bottom: 5px !important;
+        padding: 5px !important;
+        margin-bottom: 3px !important;
     }
     """
     
@@ -91,69 +91,17 @@ st.markdown(f"""
     {estilos_css}
     {css_anti_rolagem}
     
-    /* Classes de Fallback para Garantir Renderização Visual do Telão no Streamlit */
-    .grade-telao-dinamica {{
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 12px;
-        padding: 5px;
-    }}
-    .mesa-container {{
-        background-color: #1e2622;
-        border: 1px solid #3d4f45;
-        border-radius: 8px;
-        padding: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    }}
-    .mesa-header {{
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid #3d4f45;
-        padding-bottom: 4px;
-        margin-bottom: 6px;
-        font-weight: bold;
-        color: #ffbf00;
-        font-size: 0.95rem;
-    }}
-    .mesa-status-pendente {{
-        background-color: #8a6d00;
-        color: #ffffff;
-        padding: 1px 5px;
-        border-radius: 4px;
-        font-size: 0.75rem;
-    }}
-    .mesa-status-concluido {{
-        background-color: #1e5a34;
-        color: #ffffff;
-        padding: 1px 5px;
-        border-radius: 4px;
-        font-size: 0.75rem;
-    }}
-    .mesa-corpo {{
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }}
-    .jogador-linha {{
-        display: flex;
-        justify-content: space-between;
-        padding: 3px 5px;
-        border-radius: 4px;
-        background-color: #151b18;
-        font-size: 0.9rem;
-    }}
-    .vencedor-destaque {{
-        background-color: #244b33 !important;
-        border-left: 4px solid #28a745;
-        font-weight: bold;
-    }}
-    .jogador-nome {{
-        color: #e0e0e0;
-    }}
-    .jogador-resultado {{
-        color: #a3cfb6;
-    }}
+    /* Fallback de Classes de Layout caso estilo.css falhe */
+    .grade-telao-dinamica {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; padding: 2px; }}
+    .mesa-container {{ background-color: #1e2622; border: 1px solid #3d4f45; border-radius: 8px; padding: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }}
+    .mesa-header {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #3d4f45; padding-bottom: 2px; margin-bottom: 4px; font-weight: bold; color: #ffbf00; font-size: 0.85rem; }}
+    .mesa-status-pendente {{ background-color: #8a6d00; color: #ffffff; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; }}
+    .mesa-status-concluido {{ background-color: #1e5a34; color: #ffffff; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; }}
+    .mesa-corpo {{ display: flex; flex-direction: column; gap: 2px; }}
+    .jogador-linha {{ display: flex; justify-content: space-between; padding: 2px 5px; border-radius: 4px; background-color: #151b18; font-size: 0.8rem; }}
+    .vencedor-destaque {{ background-color: #244b33 !important; border-left: 4px solid #28a745; font-weight: bold; }}
+    .jogador-nome {{ color: #e0e0e0; }}
+    .jogador-resultado {{ color: #a3cfb6; }}
 
     @media print {{
         header, footer, nav, button, [data-testid="stSidebar"], 
@@ -173,7 +121,7 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-# 👑 PAINEL DE AUTENTICAÇÃO E ASSINATURA (SIDEBAR)
+# SIDEBAR CORPORATIVA DE SEGURANÇA E ASSINATURA TÉCNICA
 st.sidebar.markdown(f"""
     <div class="dev-assinatura-container">
         <div class="dev-titulo">Engenharia de Software</div>
@@ -206,7 +154,6 @@ if perfil_escolhido == "⚙️ Administrador":
         if st.sidebar.button("Logoff / Sair 🔒"):
             st.session_state.perfil_usuario = "Público"
             st.rerun()
-            
 elif perfil_escolhido == "📺 Modo Telão":
     st.session_state.perfil_usuario = "Telão"
 else:
@@ -216,111 +163,98 @@ modo_telao = (st.session_state.perfil_usuario == "Telão")
 
 
 # ==============================================================================
-# 🎛️ 2ª PARTE: FUNÇÕES INTERNAS DE RENDERIZAÇÃO E AUDIO
+# 🎛️ 2ª PARTE: MOTOR DE TEMPO EM JAVASCRIPT NATIVO (ANTI-RESET DE ABAS)
 # ==============================================================================
+def obter_tempo_restante_dinamico():
+    c_dados = dados.get('Cronometro', {'TempoRestanteSegundos': 2700, 'Ativo': False, 'FimRodada': False, 'TimestampInicio': None})
+    if c_dados['Ativo'] and c_dados.get('TimestampInicio') is not None:
+        decorrido = int(time.time() - c_dados['TimestampInicio'])
+        restante = max(0, c_dados['TempoRestanteSegundos'] - decorrido)
+        if restante <= 0:
+            c_dados['Ativo'] = False
+            c_dados['FimRodada'] = True
+            c_dados['TempoRestanteSegundos'] = 0
+            dados['Cronometro'] = c_dados
+            gerenciador_dados.salvar_dados(dados)
+            return 0, c_dados
+        return restante, c_dados
+    return c_dados['TempoRestanteSegundos'], c_dados
+
+def injetar_cronometro_javascript():
+    """ Injeta o motor em JavaScript rodando no navegador cliente independente do Python """
+    segundos_totais, c_dados = obter_tempo_restante_dinamico()
+    ativo_js = "true" if c_dados['Ativo'] else "false"
+    
+    html_cronometro = f"""
+    <div id="js-cronometro-box" style="background-color: #121815; border: 2px solid #28a745; border-radius: 10px; padding: 4px; text-align: center; margin-bottom: 4px; box-shadow: 0 0 12px rgba(0,0,0,0.5);">
+        <span id="js-cronometro-texto" style="font-size: 2.6rem; font-family: 'Courier New', monospace; font-weight: bold; color: #28a745; line-height: 1.1;">--:--</span>
+    </div>
+
+    <script>
+        (function() {{
+            var segundosRestantes = {segundos_totais};
+            var ativo = {ativo_js};
+            var elementoBox = document.getElementById('js-cronometro-box');
+            var elementoTexto = document.getElementById('js-cronometro-texto');
+            
+            function atualizarDisplay() {{
+                if (segundosRestantes <= 0) {{
+                    elementoBox.style.borderColor = "#ff4b4b";
+                    elementoTexto.style.color = "#ff4b4b";
+                    elementoTexto.innerText = "00:00 - TUDO É FALTA! 🔔";
+                    return;
+                }}
+                
+                var minutos = Math.floor(segundosRestantes / 60);
+                var segundos = segundosRestantes % 60;
+                
+                var strMin = minutos < 10 ? "0" + minutos : minutos;
+                var strSeg = segundos < 10 ? "0" + segundos : segundos;
+                
+                if (segundosRestantes < 300) {{
+                    elementoBox.style.borderColor = "#ffaa00";
+                    elementoTexto.style.color = "#ffaa00";
+                    elementoTexto.innerText = strMin + ":" + strSeg + " - ÚLTIMOS MINUTOS! ⚠️";
+                }} else {{
+                    elementoBox.style.borderColor = "#28a745";
+                    elementoTexto.style.color = "#28a745";
+                    elementoTexto.innerText = strMin + ":" + strSeg;
+                }}
+            }}
+            
+            atualizarDisplay();
+            
+            if (ativo && segundosRestantes > 0) {{
+                var intervalo = setInterval(function() {{
+                    segundosRestantes--;
+                    atualizarDisplay();
+                    if (segundosRestantes <= 0) {{
+                        clearInterval(intervalo);
+                    }}
+                }}, 1000);
+            }}
+        }})();
+    </script>
+    """
+    st.components.v1.html(html_cronometro, height=85)
+
 def exibir_podio_arena(lista_classificada):
     if not lista_classificada: return
-    
     c1 = lista_classificada[0]['Nome'] if len(lista_classificada) > 0 else "---"
     c2 = lista_classificada[1]['Nome'] if len(lista_classificada) > 1 else "---"
     c3 = lista_classificada[2]['Nome'] if len(lista_classificada) > 2 else "---"
-    c4 = lista_classificada[3]['Nome'] if len(lista_classificada) > 3 else "---"
-    
-    rei_flor_nome = "N/A"
-    maior_flor_pontos = -1
-    for jogador in lista_classificada:
-        if jogador.get('FlorPró', 0) > maior_flor_pontos:
-            maior_flor_pontos = jogador.get('FlorPró', 0)
-            rei_flor_nome = jogador['Nome']
-            
-    col_podio, col_flor = st.columns([3, 1])
-    
-    with col_podio:
-        st.markdown(f"""
-            <div class="podio-container">
-                <div class="podio-card podio-2">
-                    <div class="podio-posicao">🥈 2º Lugar</div>
-                    <div class="podio-nome">{c2}</div>
-                </div>
-                <div class="podio-card podio-1">
-                    <div class="podio-posicao">🥇 1º Lugar</div>
-                    <div class="podio-nome">{c1}</div>
-                </div>
-                <div class="podio-card podio-3">
-                    <div class="podio-posicao">🥉 3º Lugar</div>
-                    <div class="podio-nome">{c3}</div>
-                </div>
-                <div class="podio-card podio-4">
-                    <div class="podio-posicao">% 4º Lugar</div>
-                    <div class="podio-nome">{c4}</div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-        
-    with col_flor:
-        if maior_flor_pontos > 0:
-            st.markdown(f"""
-                <div class="card-rei-flor">
-                    <div class="rei-flor-titulo">🌸 CANTADOR DE FLOR</div>
-                    <div class="rei-flor-nome">{rei_flor_nome}</div>
-                    <div style="color: #ff4da6; font-size: 0.9rem; font-weight: bold; margin-top:3px;">{maior_flor_pontos} Flores Cantadas</div>
-                </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown("""
-                <div class="card-rei-flor" style="border-color: #555;">
-                    <div class="rei-flor-titulo" style="color: #888;">🌸 CANTADOR DE FLOR</div>
-                    <div class="rei-flor-nome" style="color: #666;">Nenhuma Lançada</div>
-                </div>
-            """, unsafe_allow_html=True)
-
-# 🔄 FRAGMENTO CORRIGIDO: Executa e desconecta do gargalo de escrita em lote no disco
-@st.fragment(run_every=1)
-def renderizar_cronometro():
-    c_dados = dados.get('Cronometro', {'TempoRestanteSegundos': 2700, 'Ativo': False, 'FimRodada': False})
-    
-    # Executa a contagem em memória fluida interna do fragmento
-    if c_dados['Ativo'] and c_dados['TempoRestanteSegundos'] > 0:
-        c_dados['TempoRestanteSegundos'] -= 1
-        st.session_state.dados['Cronometro']['TempoRestanteSegundos'] = c_dados['TempoRestanteSegundos']
-        
-    if c_dados['TempoRestanteSegundos'] == 0 and c_dados['Ativo']:
-        c_dados['Ativo'] = False
-        c_dados['FimRodada'] = True
-        st.session_state.dados['Cronometro'] = c_dados
-        gerenciador_dados.salvar_dados(st.session_state.dados)
-        st.rerun()
-        
-    segundos_totais = c_dados['TempoRestanteSegundos']
-    minutos = segundos_totais // 60
-    segundos = segundos_totais % 60
-    
-    if c_dados.get('FimRodada') or segundos_totais == 0:
-        cor_relogio = "#ff4b4b"
-        texto_tempo = "00:00 - TUDO É FALTA! 🔔"
-        if os.path.exists("alerta.mp3"):
-            with open("alerta.mp3", "rb") as f:
-                audio_bytes = f.read()
-            st.audio(audio_bytes, format="audio/mp3", autoplay=True)
-    elif segundos_totais < 300: 
-        cor_relogio = "#ffaa00"
-        texto_tempo = f"{minutos:02d}:{segundos:02d} - ÚLTIMOS MINUTOS! ⚠️"
-    else:
-        cor_relogio = "#28a745"
-        texto_tempo = f"{minutos:02d}:{segundos:02d}"
-        
-    tamanho_fonte = "3.2rem" if modo_telao else "2.8rem"
-    margin_bot = "5px" if modo_telao else "15px"
     
     st.markdown(f"""
-        <div style="background-color: #121815; border: 2px solid {cor_relogio}; border-radius: 10px; padding: 6px; text-align: center; margin-bottom: {margin_bot}; box-shadow: 0 0 15px rgba(0,0,0,0.5);">
-            <span style="font-size: {tamanho_fonte}; font-family: 'Courier New', monospace; font-weight: bold; color: {cor_relogio}; line-height: 1.1;">{texto_tempo}</span>
+        <div style='display: flex; justify-content: space-around; background-color: #151b18; padding: 6px; border-radius: 8px; border: 1px solid #3d4f45; text-align: center; margin-bottom: 5px;'>
+            <div><span style='color: #d7d7d7; font-size: 0.8rem;'>🥈 2º Lugar</span><br><b style='font-size:0.9rem;'>{c2}</b></div>
+            <div><span style='color: #ffbf00; font-size: 1rem;'>🥇 1º Lugar</span><br><b style='font-size:1.05rem; color: #ffbf00;'>{c1}</b></div>
+            <div><span style='color: #cd7f32; font-size: 0.8rem;'>🥉 3º Lugar</span><br><b style='font-size:0.9rem;'>{c3}</b></div>
         </div>
     """, unsafe_allow_html=True)
 
 
 # ==============================================================================
-# 📺 3ª PARTE: RENDERIZAÇÃO: MODO TELÃO (CORREÇÃO DE RENDERIZAÇÃO HTML)
+# 📺 3ª PARTE: MODO TELÃO - AUTOMATIZADO COM PAGINAÇÃO DE MESAS (SEM CORTE)
 # ==============================================================================
 if modo_telao:
     titulo_torneio_show = dados.get('NomeTorneio', 'Torneio de Truco')
@@ -328,15 +262,14 @@ if modo_telao:
     
     st.markdown(f"""
         <div style='text-align: center; margin-bottom: 2px;'>
-            <h1 style='color: #ffbf00 !important; margin: 0; font-size: 2.0rem;'>🃏 {titulo_torneio_show} <span style='color:#a3cfb6; font-size: 1.4rem;'>{rodada_txt}</span></h1>
+            <h1 style='color: #ffbf00 !important; margin: 0; font-size: 1.7rem;'>🃏 {titulo_torneio_show} <span style='color:#a3cfb6; font-size: 1.2rem;'>{rodada_txt}</span></h1>
         </div>
     """, unsafe_allow_html=True)
     
     if dados['Status'] == 'Em Andamento':
-        renderizar_cronometro()
+        injetar_cronometro_javascript()
         
     if st.session_state.tela_telao == "jogos":
-        st.markdown("<h4 style='color: #ffbf00; margin-top:0; margin-bottom:5px; text-align:center;'>⚔️ CONFRONTOS DA RODADA AO VIVO</h4>", unsafe_allow_html=True)
         if 'RodadaAtual' in dados and 'Rodadas' in dados and len(dados['Rodadas']) > 0:
             rodada_atual_num = dados['RodadaAtual']
             rodada_atual = next((r for r in dados['Rodadas'] if r.get('Numero') == rodada_atual_num), None)
@@ -344,8 +277,21 @@ if modo_telao:
             if rodada_atual and 'Mesas' in rodada_atual:
                 mesas = rodada_atual.get('Mesas', [])
                 
+                # 📄 PAGINAÇÃO CRÍTICA FIXA EM 6 MESAS POR EXIBIÇÃO CONTRA CORTES
+                MESAS_POR_PAGINA = 6
+                total_mesas = len(mesas)
+                total_paginas = (total_mesas + MESAS_POR_PAGINA - 1) // MESAS_POR_PAGINA
+                
+                if st.session_state.pagina_mesas >= total_paginas:
+                    st.session_state.pagina_mesas = 0
+                    
+                pag_atual = st.session_state.pagina_mesas
+                mesas_visiveis = mesas[pag_atual * MESAS_POR_PAGINA : (pag_atual + 1) * MESAS_POR_PAGINA]
+                
+                st.markdown(f"<h4 style='color: #ffbf00; margin-top:0; margin-bottom:4px; text-align:center; font-size:1rem;'>⚔️ JOGOS EM EXECUÇÃO (PÁG. {pag_atual+1}/{total_paginas})</h4>", unsafe_allow_html=True)
+                
                 col_t1, col_t2 = st.columns(2)
-                for idx, m in enumerate(mesas):
+                for idx, m in enumerate(mesas_visiveis):
                     col_alvo = col_t1 if idx % 2 == 0 else col_t2
                     with col_alvo:
                         status_txt = "EM ANDAMENTO" if m.get('Status') == 'Pendente' else "CONCLUÍDO"
@@ -371,17 +317,23 @@ if modo_telao:
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
+                
+                time.sleep(10) # Ciclo de tempo estático por página de mesa
+                st.session_state.pagina_mesas += 1
+                if st.session_state.pagina_mesas >= total_paginas:
+                    st.session_state.tela_telao = "classificacao"
+                st.rerun()
             else:
-                st.info("Nenhum jogo ativo nesta rodada.")
+                st.info("Nenhum jogo ativo cadastrado.")
+                time.sleep(4)
+                st.rerun()
         else:
-            st.info("Aguardando definição das rodadas.")
-            
-        time.sleep(12)
-        st.session_state.tela_telao = "classificacao"
-        st.rerun()
+            st.info("Aguardando chaves da rodada.")
+            time.sleep(4)
+            st.rerun()
         
     else:
-        st.markdown("<h4 style='color: #ffbf00; margin-top:0; margin-bottom:5px; text-align:center;'>📊 CLASSIFICAÇÃO GERAL E EM DESTAQUE</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color: #ffbf00; margin-top:0; margin-bottom:4px; text-align:center; font-size:1rem;'>📊 CLASSIFICAÇÃO GERAL PARCIAL DO TORNEIO</h4>", unsafe_allow_html=True)
         if dados.get('Jogadores'):
             lista_classificada = motor_truco.processar_classificacao(dados)
             exibir_podio_arena(lista_classificada)
@@ -389,19 +341,21 @@ if modo_telao:
             df_class = pd.DataFrame(lista_classificada)
             df_class.index = [f"{i+1}º" for i in range(len(df_class))]
             df_visual = df_class.rename(columns={
-                'Nome': 'Dupla / Competidor', 'Pts': 'Pontos', 'Vit': 'Vitórias',
-                'SaldoSets': 'Saldo Sets', 'SaldoTent': 'Saldo Tentos', 'FlorPró': 'Flores', 'Bukes': 'Buchholz'
+                'Nome': 'Competidor / Dupla', 'Pts': 'Pontos', 'Vit': 'Vitórias',
+                'SaldoSets': 'Saldo Sets', 'SaldoTent': 'Saldo Tentos'
             })
-            st.dataframe(df_visual[['Dupla / Competidor', 'Pontos', 'Vitórias', 'Saldo Sets', 'Saldo Tentos', 'Flores', 'Buchholz']], use_container_width=True, height=240)
+            st.dataframe(df_visual[['Competidor / Dupla', 'Pontos', 'Vitórias', 'Saldo Sets', 'Saldo Tentos']], use_container_width=True, height=210)
         else:
-            st.warning("Nenhum competidor cadastrado.")
+            st.warning("Nenhum competidor registrado no banco.")
             
-        time.sleep(8)
+        time.sleep(8) # Tempo fixo de exibição do ranking antes de rotacionar
         st.session_state.tela_telao = "jogos"
+        st.session_state.pagina_mesas = 0
         st.rerun()
 
+
 # ==============================================================================
-# 🏢 4ª PARTE: RENDERIZAÇÃO: MODO INTERATIVO (PÚBLICO E OPERACIONAL)
+# 🏢 4ª PARTE: MODO OPERACIONAL CENTRAL - INTERATIVO E PÚBLICO
 # ==============================================================================
 else:
     st.markdown("<h1 style='text-align: center; color: #ffbf00 !important;'>🃏 Central de Torneios de Truco</h1>", unsafe_allow_html=True)
@@ -410,7 +364,7 @@ else:
     ip_local = gerenciador_dados.obter_ip_da_rede()
     st.info(f"🌐 **Rede Local Ativa:** Acesse por outros dispositivos usando: `http://{ip_local}:8501`")
 
-    # CONSTRUÇÃO DINÂMICA E SEGURA DAS ABAS
+    # Montagem condicional dinâmica e segura das Abas Operacionais
     abas_lista = ["📊 Classificação Geral"]
     
     if dados['Status'] == 'Configuração':
@@ -450,7 +404,7 @@ else:
                 st.info("Nenhum competidor inscrito até o momento.")
     aba_index += 1
 
-    # --- 2. ABA: INSCRIÇÃO ONLINE (PÚBLICA) ---
+    # --- 2. ABA: INSCRIÇÃO ONLINE ---
     if "📝 Inscrição Online" in abas_lista:
         with abas_criadas[aba_index]:
             st.markdown("<h2 style='color: #ffbf00 !important;'>📝 Formulário de Inscrição Oficial</h2>", unsafe_allow_html=True)
@@ -475,11 +429,11 @@ else:
 
 
 # ==============================================================================
-# 🖨️ 5ª PARTE: ABA: LANÇAR MESAS & IMPRESSÃO TÉRMICA (EXCLUSIVA ADMIN)
+# 🖨️ 5ª PARTE: ABA: LANÇAR MESAS E IMPRESSÃO DE SÚMULAS TÉRMICAS
 # ==============================================================================
     if "⚔️ Lançar Mesas" in abas_lista:
         with abas_criadas[aba_index]:
-            renderizar_cronometro()
+            injetar_cronometro_javascript()
             rodada_atual_num = dados['RodadaAtual']
             rodadas_lista = dados.get('Rodadas', [])
             rodada_atual = next((r for r in rodadas_lista if r['Numero'] == rodada_atual_num), None)
@@ -495,6 +449,7 @@ else:
                 
                 mesas = rodada_atual.get('Mesas', [])
                 
+                # Renderizador estruturado Oculto para Impressora Térmica de 80mm
                 html_impressao = f"<div class='secao-impressao-sumulas'>"
                 for m in mesas:
                     if m['Jogador1'] == "CHAPÉU" or m['Jogador2'] == "CHAPÉU": continue 
@@ -579,6 +534,12 @@ else:
                                         if "2 x 0" in escolha_set: alvo['TentosJ1'], alvo['TentosJ2'] = 0, 24
                                         else: alvo['TentosJ1'], alvo['TentosJ2'] = t1_int, t2_int
                                         
+                                    # Preserva sincronia linear do tempo real durante as persistências em arquivo
+                                    segundos_restantes_agora, _ = obter_tempo_restante_dinamico()
+                                    dados['Cronometro']['TempoRestanteSegundos'] = segundos_restantes_agora
+                                    if dados['Cronometro']['Ativo']:
+                                        dados['Cronometro']['TimestampInicio'] = time.time()
+                                        
                                     gerenciador_dados.salvar_dados(dados)
                                     st.success(f"Mesa {m['Mesa']} Lançada com Sucesso!")
                                     st.rerun()
@@ -588,7 +549,7 @@ else:
 
 
 # ==============================================================================
-# ⚙️ 6ª PARTE: PAINEL DE CONTROLE ADMIN & VIRADA DE RODADA DO SISTEMA SUÍÇO
+# ⚙️ 6ª PARTE: PAINEL DE CONTROLE ADMIN COMPLETO (REGRAS DO SISTEMA SUÍÇO)
 # ==============================================================================
     if "⚙️ Painel de Controle Admin" in abas_lista:
         with abas_criadas[aba_index]:
@@ -601,77 +562,55 @@ else:
                 
                 st.markdown("---")
                 st.markdown("### 👥 Gerenciador Ativo de Inscrições")
-                
                 opcao_cadastro = st.radio("Selecione o método operacional de cadastro:", ["Individual Manual", "🚀 Importação Rápida em Lote (Copia e Cola)"], horizontal=True)
                 
                 if opcao_cadastro == "Individual Manual":
                     col_cad1, col_cad2 = st.columns(2)
-                    with col_cad1:
-                        novo_nome = st.text_input("Nome do Competidor / Identificação da Dupla:", key="cad_nome").strip().upper()
-                    with col_cad2:
-                        nova_ent = st.text_input("Entidade / Clube / Cidade de Origem:", key="cad_ent").strip().upper()
+                    with col_cad1: novo_nome = st.text_input("Nome do Competidor / Identificação da Dupla:", key="cad_nome").strip().upper()
+                    with col_cad2: nova_ent = st.text_input("Entidade / Clube / Cidade de Origem:", key="cad_ent").strip().upper()
                         
                     if st.button("📥 Cadastrar Competidor Individual"):
-                        if not novo_nome:
-                            st.error("Erro: O campo de nome não pode ficar em branco.")
+                        if not novo_nome: st.error("Erro: O campo de nome não pode ficar em branco.")
                         else:
                             nomes_existentes = [j['Nome'] for j in dados.get('Jogadores', [])]
-                            if novo_nome in nomes_existentes:
-                                st.warning(f"Aviso: '{novo_nome}' já se encontra cadastrado no banco.")
+                            if novo_nome in nomes_existentes: st.warning(f"Aviso: '{novo_nome}' já se encontra cadastrado.")
                             else:
                                 ent_f = nova_ent if nova_ent else "MESA"
                                 dados['Jogadores'].append({'Nome': novo_nome, 'Entidade': ent_f})
                                 gerenciador_dados.salvar_dados(dados)
-                                st.success(f"🎉 '{novo_nome}' integrado à lista oficial!")
+                                st.success(f"🎉 '{novo_nome}' integrado!")
                                 st.rerun()
-                                
                 else:
-                    st.markdown("> **Instruções do Lote:** Copie uma lista inteira de nomes e cole no campo abaixo. Insira **um competidor por linha**.")
+                    st.markdown("> **Instruções do Lote:** Insira **um competidor por linha**.")
                     entidade_lote = st.text_input("Entidade / Cidade padrão atribuída a este lote:", value="MESA", key="ent_lote").strip().upper()
-                    texto_lote = st.text_area("Cole as linhas com os nomes dos competidores aqui:", height=180, placeholder="DUPLA ALVES & GOMES\nMARCOS SOUZA\nTRUQUEIROS DA COSTA")
+                    texto_lote = st.text_area("Cole as linhas com os nomes dos competidores aqui:", height=180)
                     
                     if st.button("⚡ Executar Processamento e Cadastro em Massa"):
-                        if not texto_lote.strip():
-                            st.error("Erro: Nenhuma informação foi detectada na caixa de texto.")
+                        if not texto_lote.strip(): st.error("Erro: Caixa vazia.")
                         else:
                             linhas = [l.strip().upper() for l in texto_lote.split("\n") if l.strip()]
                             cadastrados_agora = 0
-                            duplicados_pulados = 0
                             nomes_existentes = [j['Nome'] for j in dados.get('Jogadores', [])]
-                            
                             for linha in linhas:
-                                if linha in nomes_existentes:
-                                    duplicados_pulados += 1
-                                else:
+                                if linha not in nomes_existentes:
                                     dados['Jogadores'].append({'Nome': linha, 'Entidade': entidade_lote})
                                     nomes_existentes.append(linha)
                                     cadastrados_agora += 1
-                                    
                             if cadastrados_agora > 0:
                                 gerenciador_dados.salvar_dados(dados)
-                                st.success(f"🔥 Carga Executada! {cadastrados_agora} novos competidores foram inseridos!")
-                            if duplicados_pulados > 0:
-                                st.warning(f"⚠️ {duplicados_pulados} registros ignorados por duplicidade estrutural.")
-                            if cadastrados_agora > 0:
-                                time.sleep(1)
+                                st.success(f"🔥 Carga Executada! {cadastrados_agora} novos competidores!")
+                                time.sleep(0.5)
                                 st.rerun()
 
                 st.markdown("---")
                 if st.button("🚀 BLOQUEAR INSCRIÇÕES E GERAR CHAVE (START)"):
                     if len(dados.get('Jogadores', [])) < 2:
-                        st.error("Erro Crítico: É obrigatório ter no mínimo 2 competidores para iniciar o chaveamento.")
+                        st.error("Erro Crítico: Mínimo de 2 competidores.")
                     else:
                         for j in dados['Jogadores']:
-                            j['Pts'] = j.get('Pts', 0)
-                            j['Vit'] = j.get('Vit', 0)
-                            j['SaldoSets'] = j.get('SaldoSets', 0)
-                            j['SetsPró'] = j.get('SetsPró', 0)
-                            j['SaldoTent'] = j.get('SaldoTent', 0)
-                            j['TentPró'] = j.get('TentPró', 0)
-                            j['SaldoFlor'] = j.get('SaldoFlor', 0)
-                            j['FlorPró'] = j.get('FlorPró', 0)
-                            j['Bukes'] = j.get('Bukes', 0)
-                            j['Jogos'] = j.get('Jogos', 0)
+                            j['Pts'] = 0; j['Vit'] = 0; j['SaldoSets'] = 0; j['SetsPró'] = 0
+                            j['SaldoTent'] = 0; j['TentPró'] = 0; j['SaldoFlor'] = 0; j['FlorPró'] = 0
+                            j['Bukes'] = 0; j['Jogos'] = 0
 
                         dados['NomeTorneio'] = nome_torneio_input if nome_torneio_input else "Torneio de Truco"
                         dados['TempoLimiteMinutos'] = tempo_limite
@@ -680,9 +619,9 @@ else:
                         dados['Cronometro'] = {
                             'TempoRestanteSegundos': tempo_limite * 60,
                             'Ativo': True,
-                            'FimRodada': False
+                            'FimRodada': False,
+                            'TimestampInicio': time.time()
                         }
-                        
                         dados['Rodadas'] = []
                         
                         try:
@@ -690,14 +629,10 @@ else:
                             if primeira_rodada is not None:
                                 dados['Rodadas'].append(primeira_rodada)
                                 gerenciador_dados.salvar_dados(dados)
-                                st.success("Campeonato Oficial Iniciado! Chaves do Sistema Suíço Geradas.")
+                                st.success("Campeonato Oficial Iniciado com Sucesso!")
                                 st.rerun()
-                            else:
-                                st.error("O motor de emparelhamento retornou um objeto nulo (None).")
-                        except AttributeError as e:
-                            st.error(f"❌ Erro de Atributo detectado no motor_truco: {str(e)}.")
                         except Exception as ex:
-                            st.error(f"❌ Erro inesperado ao processar chaveamento: {str(ex)}")
+                            st.error(f"❌ Erro ao processar chaveamento: {str(ex)}")
                         
                 st.markdown("### 👥 Gerenciador Analítico de Inscritos (Exclusão)")
                 if dados.get('Jogadores'):
@@ -711,19 +646,32 @@ else:
                                 st.rerun()
                                 
             elif dados['Status'] == 'Em Andamento':
-                st.info("🔒 **Inscrições Trancadas:** O torneio está ativo. O quadro de jogadores não pode receber alterações para não comprometer as somas do cálculo do Buchholz.")
+                st.info("🔒 **Inscrições Trancadas:** O torneio está ativo.")
                 st.markdown(f"### 🛡️ Cronômetro da Arena — Rodada {dados['RodadaAtual']}")
-                c_ativo = dados['Cronometro'].get('Ativo', False)
+                
+                restante_real, c_dados = obter_tempo_restante_dinamico()
+                c_ativo = c_dados.get('Ativo', False)
+                
                 col_btn1, col_btn2 = st.columns(2)
                 with col_btn1:
                     if st.button("⏸️ Congelar Cronômetro" if c_ativo else "▶️ Ativar Cronômetro"):
-                        dados['Cronometro']['Ativo'] = not c_ativo
+                        if c_ativo:
+                            dados['Cronometro']['TempoRestanteSegundos'] = restante_real
+                            dados['Cronometro']['Ativo'] = False
+                            dados['Cronometro']['TimestampInicio'] = None
+                        else:
+                            dados['Cronometro']['TempoRestanteSegundos'] = restante_real
+                            dados['Cronometro']['Ativo'] = True
+                            dados['Cronometro']['TimestampInicio'] = time.time()
+                            
                         gerenciador_dados.salvar_dados(dados)
                         st.rerun()
                 with col_btn2:
                     if st.button("🔄 Reiniciar Tempo Padrão"):
                         dados['Cronometro']['TempoRestanteSegundos'] = dados['TempoLimiteMinutos'] * 60
                         dados['Cronometro']['FimRodada'] = False
+                        if dados['Cronometro']['Ativo']:
+                            dados['Cronometro']['TimestampInicio'] = time.time()
                         gerenciador_dados.salvar_dados(dados)
                         st.rerun()
                 
@@ -753,12 +701,13 @@ else:
                             dados['Cronometro'] = {
                                 'TempoRestanteSegundos': dados['TempoLimiteMinutos'] * 60,
                                 'Ativo': True,
-                                'FimRodada': False
+                                'FimRodada': False,
+                                'TimestampInicio': time.time()
                             }
                         gerenciador_dados.salvar_dados(dados)
                         st.rerun()
                 else:
-                    st.warning("🔒 Bloqueio de Próxima Fase: Há mesas pendentes nesta rodada que precisam ser preenchidas antes de avançar.")
+                    st.warning("🔒 Bloqueio: Há mesas pendentes nesta rodada.")
                     
             if st.button("🚨 PURGAR BANCO DE DADOS (Zerar Todo o Sistema)"):
                 gerenciador_dados.limpar_banco_dados()
@@ -766,12 +715,12 @@ else:
                 st.rerun()
         aba_index += 1
 
-    # --- 5. ABA: GALERIA DE CAMPEÕES ---
+    # --- 7. ABA: GALERIA DE CAMPEÕES ---
     with abas_criadas[aba_index]:
         st.markdown("<h2 style='color: #ffbf00 !important;'>🏆 Histórico de Grandes Campeões</h2>", unsafe_allow_html=True)
         historico = dados.get('HistoricoCampeoes', [])
         if historico:
             for h in historico:
-                st.markdown(f"🏅 **{h['Torneio']}** | Campeão Invicto: `{h['Campeao']}` — 🗓️ Data de Conclusão: {h['Data']}", unsafe_allow_html=True)
+                st.markdown(f"🏅 **{h['Torneio']}** | Campeão: `{h['Campeao']}` — 🗓️ {h['Data']}", unsafe_allow_html=True)
         else:
-            st.info("Nenhum torneio arquivado no banco de dados local.")
+            st.info("Nenhum torneio arquivado.")
