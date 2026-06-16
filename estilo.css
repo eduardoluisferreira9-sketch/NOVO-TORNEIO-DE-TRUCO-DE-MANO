@@ -1,5 +1,5 @@
 /* ==========================================================================
-   🎨 ESTILIZAÇÃO COMPLETA: ARENA TRUCO PREMIUM (MÁXIMO OURO & ZERO CINZA)
+   🎨 ESTILIZAÇÃO COMPLETA: ARENA TRUCO PREMIUM (MÁXIMO OURO & ZERO CINZA - FIX ABAS)
    ========================================================================== */
 
 /* 🌌 FUNDO ESCURO GRAFITE CONFORTÁVEL EM TODO O SISTEMA */
@@ -32,7 +32,7 @@
 
 .dev-titulo {
     font-size: 0.75rem !important;
-    color: #ffca28 !important; /* MUDOU: Era cinza, agora é ouro */
+    color: #ffca28 !important;
     text-transform: uppercase !important;
     letter-spacing: 2px !important;
     margin-bottom: 2px !important;
@@ -68,13 +68,13 @@
 }
 
 .podio-1 { border: 2px solid #ffca28 !important; background: linear-gradient(180px, rgba(255,202,40,0.1) 0%, #1a1f26 100%) !important; }
-.podio-2 { border: 2px solid #ffca28 !important; background: linear-gradient(180px, rgba(255,202,40,0.05) 0%, #1a1f26 100%) !important; } /* Moldura em Ouro */
+.podio-2 { border: 2px solid #ffca28 !important; background: linear-gradient(180px, rgba(255,202,40,0.05) 0%, #1a1f26 100%) !important; }
 .podio-3 { border: 2px solid #cd7f32 !important; background: linear-gradient(180px, rgba(205,127,50,0.1) 0%, #1a1f26 100%) !important; }
 .podio-4 { border: 2px solid #5c4033 !important; }
 
 .podio-posicao { font-size: 1.3rem !important; font-weight: bold !important; margin-bottom: 5px !important; }
 .podio-1 .podio-posicao { color: #ffca28 !important; }
-.podio-2 .podio-posicao { color: #ffd54f !important; } /* MUDOU: Prata virou Ouro Secundário */
+.podio-2 .podio-posicao { color: #ffd54f !important; }
 .podio-3 .podio-posicao { color: #cd7f32 !important; }
 .podio-4 .podio-posicao { color: #b58d75 !important; }
 
@@ -124,7 +124,7 @@
 }
 
 .mesa-status-pendente {
-    color: #000000 !important; /* Texto preto para legibilidade total na caixinha amarela */
+    color: #000000 !important; 
     background-color: #ffca28 !important; 
     padding: 3px 10px !important;
     border-radius: 6px !important;
@@ -143,7 +143,7 @@
     border: 1px solid #ffff00 !important;
 }
 
-/* LINHA DOS JOGADORES - TOTALMENTE TRABALHADA NO DOURADO/AMARELO */
+/* LINHA DOS JOGADORES */
 .jogador-linha {
     display: flex !important;
     justify-content: space-between !important;
@@ -157,22 +157,20 @@
 }
 
 .jogador-nome { 
-    color: #fff647 !important; /* Amarelo Limão Vivo */
+    color: #fff647 !important; 
     font-weight: 800 !important; 
     text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.9); 
 }
 
-/* TEXTO DO PLACAR DA MESA (AQUELE QUE ESTAVA CINZA E PEQUENO) */
 .jogador-resultado { 
-    color: #ffff00 !important; /* MUDOU: Agora brilha em amarelo ouro */
+    color: #ffff00 !important; 
     font-family: 'Courier New', monospace !important; 
     font-weight: bold !important; 
     background-color: #000000 !important; 
     padding: 4px 12px !important; 
     border-radius: 4px !important; 
-    border: 1px solid #ffca28 !important; /* Borda dourada em volta do placar */
+    border: 1px solid #ffca28 !important; 
     font-size: 1.2rem !important;
-    text-shadow: none !important;
 }
 
 /* 👑 DESTAQUE DE VITÓRIA */
@@ -203,24 +201,24 @@
 }
 .galeria-header { display: flex; justify-content: space-between; border-bottom: 1px solid #30363d; padding-bottom: 6px; margin-bottom: 10px; }
 .galeria-titulo-evento { font-size: 1.2rem; font-weight: bold; color: #ffca28; }
-.galeria-data { color: #ffd54f !important; font-size: 0.9rem; } /* MUDOU: Data em dourado suave */
+.galeria-data { color: #ffd54f !important; font-size: 0.9rem; } 
 .galeria-linha-campeao { font-size: 1.15rem; font-weight: bold; color: #ffffff; }
 .galeria-ouro { color: #ffca28; }
-.galeria-linha-secundaria { color: #ffd54f !important; font-size: 1rem; margin-top: 2px; } /* MUDOU: Vice-campeão em ouro */
+.galeria-linha-secundaria { color: #ffd54f !important; font-size: 1rem; margin-top: 2px; }
 
-/* ✍️ BANIMENTO DO CINZA NOS COMPONENTES NATIVOS DO STREMLIT */
-/* Isso altera os botões de "Lançar Placar", labels, textos secundários e expanders */
-.stDataFrame, .stTable, label, p, span, .stMarkdown {
-    color: #ffca28 !important; /* Força tudo para Dourado Real */
+/* ✍️ DIRECIONAMENTO ALVO CONTRA O CINZA (SEM QUEBRAR AS ABAS DO STREAMLIT) */
+/* Altera textos de labels, tabelas e parágrafos comuns de dados */
+.stDataFrame, .stTable, label, .stMarkdown p {
+    color: #ffca28 !important;
 }
 
-/* Altera as escritas pequenas dos botões expansores de Lançamento de Placar */
-.stContentBlock, text, .stExpander p, summary span {
-    color: #ffea00 !important; /* Amarelo Intenso */
+/* Garante o dourado específico dentro dos boxes de informações e expanders das mesas */
+.stExpander p, [data-testid="stExpander"] summary span {
+    color: #ffea00 !important;
     font-weight: bold !important;
 }
 
-/* Remove o cinza dos ícones de setas e pequenos detalhes */
+/* Mantém os pequenos ícones em dourado */
 svg {
     fill: #ffca28 !important;
 }
