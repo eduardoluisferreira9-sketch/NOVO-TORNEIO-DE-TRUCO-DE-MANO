@@ -275,8 +275,8 @@ if modo_telao:
                         </div>
                     </div>
                 </div>
-            """
-        html_grade += "</div>"         
+        """
+        html_grade += "</div>"
         st.markdown(html_grade, unsafe_allow_html=True)
         else:
             st.info("Nenhum jogo ativo nesta rodada.")
