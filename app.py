@@ -247,7 +247,7 @@ if modo_telao:
         
     if st.session_state.tela_telao == "jogos":
         st.markdown("<h3 style='color: #ffbf00; margin-top:0; margin-bottom:10px; text-align:center;'>⚔️ CONFRONTOS DA RODADA AO VIVO</h3>", unsafe_allow_html=True)
-        if 'RodadaAtual' in dados and 'Rodadas' in dados:
+        if 'RodadaAtual' in dados and 'Rodadas' in dados and len(dados['Rodadas']) > 0:
             rodada_atual_num = dados['RodadaAtual']
             rodada_atual = next((r for r in dados['Rodadas'] if r.get('Numero') == rodada_atual_num), None)
             
@@ -320,14 +320,15 @@ else:
     ip_local = gerenciador_dados.obter_ip_da_rede()
     st.info(f"🌐 **Rede Local Ativa:** Acesse por outros dispositivos usando: `http://{ip_local}:8501`")
 
-    # CONSTRUÇÃO DINÂMICA DAS ABAS BASEADO NO CONTEXTO DO TORNEIO E PERFIL LOGADO
+    # CONSTRUÇÃO DINÂMICA E SEGURA DAS ABAS
     abas_lista = ["📊 Classificação Geral"]
     
     if dados['Status'] == 'Configuração':
         abas_lista.append("📝 Inscrição Online")
         
     if st.session_state.perfil_usuario == "Administrador":
-        if dados['Status'] != 'Configuração':
+        # CORREÇÃO CRÍTICA: Lançar mesas só aparece se o torneio já saiu da fase de configuração
+        if dados['Status'] != 'Configuração' and len(dados.get('Rodadas', [])) > 0:
             abas_lista.append("⚔️ Lançar Mesas")
         abas_lista.append("⚙️ Painel de Controle Admin")
         
@@ -365,19 +366,19 @@ else:
         with abas_criadas[aba_index]:
             st.markdown("<h2 style='color: #ffbf00 !important;'>📝 Formulário de Inscrição Oficial</h2>", unsafe_allow_html=True)
             with st.form("form_auto_inscricao", clear_on_submit=True):
-                nome_atleta = st.text_input("Nome do Atleta ou da Dupla:").strip().upper()
+                name_atleta = st.text_input("Nome do Atleta ou da Dupla:").strip().upper()
                 entidade_atleta = st.text_input("Sua Entidade / Equipe / Clube:").strip().upper()
                 botao_enviar = st.form_submit_button("Enviar Minha Inscrição 🚀")
                 if botao_enviar:
-                    if not nome_atleta: 
+                    if not name_atleta: 
                         st.error("Preencha o campo do Nome.")
                     else:
                         nomes_existentes = [j['Nome'] for j in dados.get('Jogadores', [])]
-                        if nome_atleta in nomes_existentes: 
+                        if name_atleta in nomes_existentes: 
                             st.warning("Jogador/Dupla já está na lista!")
                         else:
                             entidade_final = entidade_atleta if entidade_atleta else "SEM ENTIDADE"
-                            dados['Jogadores'].append({'Nome': nome_atleta, 'Entidade': entidade_final})
+                            dados['Jogadores'].append({'Nome': name_atleta, 'Entidade': entidade_final})
                             gerenciador_dados.salvar_dados(dados)
                             st.success("Inscrição efetuada com sucesso!")
                             st.rerun()
@@ -402,7 +403,6 @@ else:
                 
                 mesas = rodada_atual.get('Mesas', [])
                 
-                # Seção invisível na tela que formata perfeitamente na impressora térmica Elgin I9
                 html_impressao = f"<div class='secao-impressao-sumulas'>"
                 for m in mesas:
                     if m['Jogador1'] == "CHAPÉU" or m['Jogador2'] == "CHAPÉU": continue 
@@ -490,6 +490,8 @@ else:
                                     gerenciador_dados.salvar_dados(dados)
                                     st.success(f"Mesa {m['Mesa']} Lançada com Sucesso!")
                                     st.rerun()
+            else:
+                st.info("Nenhuma rodada gerada até o momento.")
         aba_index += 1
 
     # --- 4. ABA: PAINEL DE CONTROLE ADMIN (EXCLUSIVA ADMIN) ---
@@ -502,9 +504,6 @@ else:
                 nome_torneio_input = st.text_input("Nome Principal da Competição:", value=dados.get('NomeTorneio', ''))
                 tempo_limite = st.number_input("Tempo do Cronômetro por Rodada (minutos):", min_value=5, max_value=120, value=int(dados.get('TempoLimiteMinutos', 45)))
                 
-                # =============================================================
-                # 🔥 SISTEMA INTEGRAL DE CADASTROS (INDIVIDUAL + EM LOTE)
-                # =============================================================
                 st.markdown("---")
                 st.markdown("### 👥 Gerenciador Ativo de Inscrições")
                 
@@ -576,7 +575,12 @@ else:
                             'Ativo': True,
                             'FimRodada': False
                         }
-                        dados['Rodadas'] = [motor_truco.gerar_rodada_suica(dados, 1)]
+                        
+                        # CORREÇÃO DA PRIMEIRA RODADA: Inicializa a lista antes e gera a rodada
+                        dados['Rodadas'] = []
+                        primeira_rodada = motor_truco.gerar_rodada_suica(dados, 1)
+                        dados['Rodadas'].append(primeira_rodada)
+                        
                         gerenciador_dados.salvar_dados(dados)
                         st.success("Campeonato Oficial Iniciado! Chaves do Sistema Suíço Geradas.")
                         st.rerun()
