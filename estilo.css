@@ -1,107 +1,104 @@
 /* ==========================================================================
-   👑 DESIGN ARENA TRUCO PREMIUM - RESOLUÇÃO VISUAL DEFINITIVA (MODERNO)
+   🏆 ARENA TRUCO ULTRA PREMIUM - VISUAL FELTRO VIVO & OURO CAMPEÃO
    ========================================================================== */
 
-/* 🌌 FUNDO GERAL IMERSIVO */
+/* 🌌 FUNDO GERAL DA PLATAFORMA (DARK PROFISSIONAL PARA DESTACAR O VERDE) */
 .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
-    background-color: #0b0d13 !important;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    background-color: #0b0e14 !important;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
 }
 
-/* 📋 BARRA LATERAL (SIDEBAR) REAGRUPADA E CORRIGIDA */
+/* 📋 BARRA LATERAL (CORREÇÃO DE TEXTOS APAGADOS) */
 [data-testid="stSidebar"] {
-    background-color: #111420 !important;
-    border-right: 1px solid #1f2438 !important;
+    background-color: #101520 !important;
+    border-right: 2px solid #1e2638 !important;
 }
-
-/* Força os textos da sidebar (como 'Controle de Exibição' e Checkboxes) a ficarem brancos e visíveis */
 [data-testid="stSidebar"] section, [data-testid="stSidebar"] label, [data-testid="stSidebar"] span {
     color: #ffffff !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
 }
 
-/* 📝 DESIGN DO FORMULÁRIO DE INSCRIÇÃO (SAI O VISUAL QUADRADO, ENTRA O CARD PREMIUM) */
-[data-testid="stForm"] {
-    background: #121624 !important;
-    border: 1px solid #232a45 !important;
-    border-radius: 12px !important;
-    padding: 30px !important;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.4) !important;
+/* 🟢 CARD PRINCIPAL EM VERDE FELTRO VIVO (O CLIMA DA MESA DE JOGO) */
+[data-testid="stForm"], .stForm {
+    background: linear-gradient(135px, #00a84f 0%, #007a39 100%) !important; /* VERDE FELTRO INTENSO */
+    border: 4px solid #5d4037 !important; /* Moldura Amadeirada */
+    border-top: 8px solid #8d6e63 !important; /* Acabamento Superior de Mesa */
+    border-radius: 16px !important;
+    padding: 35px !important;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6) !important;
 }
 
-/* Títulos e Labels do Formulário */
+/* 📝 AJUSTE DE CONTRASTE DOS TEXTOS SOBRE O VERDE */
 h1 {
     color: #ffffff !important;
+    font-weight: 900 !important;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.6) !important;
+}
+
+/* Labels do formulário (Nome do Atleta, Entidade, etc.) */
+[data-testid="stForm"] label, [data-testid="stForm"] p, [data-testid="stMarkdownContainer"] h2 {
+    color: #ffffff !important;
+    font-size: 1.15rem !important;
     font-weight: 800 !important;
-    letter-spacing: -1px !important;
+    text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.8) !important; /* Sombra preta para dar leitura total sobre o verde */
 }
 
-h2, h3, label, [data-testid="stMarkdownContainer"] p {
-    color: #e2e8f0 !important;
-    font-size: 1.05rem !important;
-    font-weight: 600 !important;
-    margin-bottom: 6px !important;
-}
-
-/* 📥 INPUTS DE TEXTO (CORREÇÃO DOS BLOCOS BRANCOS GIGANTES) */
+/* 📥 CAIXAS DE INPUT (SUTIS E PROFISSIONAIS) */
 .stTextInput input, [data-testid="stTextInput"] input {
-    background-color: #1a1f33 !important; /* Fundo escuro elegante em vez de branco total */
-    color: #ffffff !important; /* Texto digitado em branco */
-    border: 2px solid #2d3654 !important;
+    background-color: #091c11 !important; /* Verde escuro profundo para casar com o feltro */
+    color: #ffff00 !important; /* Texto digitado brilha em Amarelo Ouro */
+    border: 2px solid #ffffff !important; /* Borda branca bem nítida */
     border-radius: 8px !important;
     padding: 12px 16px !important;
-    font-size: 1.1rem !important;
-    transition: all 0.3s ease !important;
+    font-size: 1.15rem !important;
+    font-weight: bold !important;
 }
 
-/* Efeito de foco quando o usuário clica para digitar */
+/* Quando o usuário clica na caixa para digitar */
 .stTextInput input:focus, [data-testid="stTextInput"] input:focus {
-    border-color: #ffca28 !important; /* Borda dourada ao selecionar */
-    box-shadow: 0 0 10px rgba(255, 202, 40, 0.2) !important;
-    background-color: #1d233a !important;
+    border-color: #ffea00 !important;
+    box-shadow: 0 0 15px rgba(255, 234, 0, 0.4) !important;
+    background-color: #0d2818 !important;
 }
 
-/* 🚀 BOTÃO ENVIAR INSCRIÇÃO (SAI O BOTÃO BRANCO SEM TEXTO) */
+/* 👑 BOTÃO DE ENVIO - DOURADO PREMIAÇÃO SUPREMO */
 .stButton button, [data-testid="stBaseButton-secondary"] {
-    background: linear-gradient(135px, #ffca28 0%, #ffb300 100%) !important; /* Degradê Ouro */
-    color: #0b0d13 !important; /* Texto em preto para dar contraste máximo */
-    font-size: 1.1rem !important;
-    font-weight: 800 !important;
+    background: linear-gradient(135px, #ffee55 0%, #ffaa00 100%) !important; /* Dourado Ouro Vivo */
+    color: #000000 !important; /* Texto em Preto Absoluto para leitura perfeita */
+    font-size: 1.2rem !important;
+    font-weight: 900 !important;
     text-transform: uppercase !important;
-    letter-spacing: 1px !important;
-    padding: 14px 28px !important;
-    border: none !important;
+    letter-spacing: 1.5px !important;
+    padding: 16px 32px !important;
+    border: 2px solid #ffffff !important;
     border-radius: 8px !important;
-    width: 100% !important; /* Botão largo moderno */
+    width: 100% !important; /* Ocupa toda a largura da mesa */
+    box-shadow: 0 6px 20px rgba(255, 170, 0, 0.4) !important;
     cursor: pointer !important;
-    transition: transform 0.2s, box-shadow 0.2s !important;
-    margin-top: 15px !important;
-    box-shadow: 0 4px 15px rgba(255, 179, 0, 0.3) !important;
+    transition: all 0.2s ease-in-out !important;
+    margin-top: 20px !important;
 }
 
 .stButton button:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 6px 20px rgba(255, 179, 0, 0.5) !important;
-    color: #0b0d13 !important;
+    transform: scale(1.01) translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(255, 234, 0, 0.6) !important;
+    background: linear-gradient(135px, #ffffff 0%, #ffaa00 100%) !important;
+    color: #000000 !important;
 }
 
-.stButton button:active {
-    transform: translateY(1px) !important;
-}
-
-/* 📺 CARDS DAS MESAS - MANTENDO O PADRÃO PARA QUANDO DEU O INÍCIO */
+/* 📺 CONFIGURAÇÃO DO TELÃO DE MESAS (QUANDO ESTIVER ROLANDO O JOGO) */
 .grade-telao-dinamica {
     display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
-    gap: 18px !important;
+    grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)) !important;
+    gap: 20px !important;
 }
 .mesa-container {
-    background: linear-gradient(135px, #008a3c 0%, #006b2e 100%) !important;
+    background: linear-gradient(135px, #00a84f 0%, #007a39 100%) !important;
     border: 3px solid #5d4037 !important;
     border-top: 6px solid #8d6e63 !important;
     border-radius: 12px !important;
     padding: 18px !important;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4) !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
 }
 .jogador-nome {
     color: #ffff00 !important;
