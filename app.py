@@ -84,6 +84,7 @@ st.markdown(f"""
         border-radius: 8px;
         padding: 12px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        margin-bottom: 10px;
     }}
     .mesa-header {{
         display: flex;
@@ -294,7 +295,7 @@ def renderizar_cronometro():
 
 
 # ==============================================================================
-# 📺 3ª PARTE: RENDERIZAÇÃO: MODO TELÃO (ROTATIVO DINÂMICO)
+# 📺 3ª PARTE: RENDERIZAÇÃO: MODO TELÃO (CORREÇÃO DE RENDERIZAÇÃO HTML)
 # ==============================================================================
 if modo_telao:
     titulo_torneio_show = dados.get('NomeTorneio', 'Torneio de Truco')
@@ -317,34 +318,35 @@ if modo_telao:
             
             if rodada_atual and 'Mesas' in rodada_atual:
                 mesas = rodada_atual.get('Mesas', [])
-                html_grade = "<div class='grade-telao-dinamica'>"
                 
-                for m in mesas:
-                    status_txt = "EM ANDAMENTO" if m.get('Status') == 'Pendente' else "CONCLUÍDO"
-                    status_classe = "mesa-status-concluido" if m.get('Status') == 'Concluído' else "mesa-status-pendente"
-                    vencedor_j1 = "vencedor-destaque" if (m.get('Status') == 'Concluído' and int(m.get('SetsJ1', 0)) > int(m.get('SetsJ2', 0))) else ""
-                    vencedor_j2 = "vencedor-destaque" if (m.get('Status') == 'Concluído' and int(m.get('SetsJ2', 0)) > int(m.get('SetsJ1', 0))) else ""
-                    
-                    html_grade += f"""
-                    <div class="mesa-container">
-                        <div class="mesa-header">
-                            <span>🚨 Mesa {m.get('Mesa')}</span>
-                            <span class="{status_classe}">{status_txt}</span>
-                        </div>
-                        <div class="mesa-corpo">
-                            <div class="jogador-linha {vencedor_j1}">
-                                <span class="jogador-nome">👤 {m.get('Jogador1')}</span>
-                                <span class="jogador-resultado">{m.get('SetsJ1')}S ({m.get('TentosJ1')}T)</span>
+                # Renderização nativa usando colunas do Streamlit em vez de string HTML gigante exposta
+                col_t1, col_t2 = st.columns(2)
+                for idx, m in enumerate(mesas):
+                    col_alvo = col_t1 if idx % 2 == 0 else col_t2
+                    with col_alvo:
+                        status_txt = "EM ANDAMENTO" if m.get('Status') == 'Pendente' else "CONCLUÍDO"
+                        status_classe = "mesa-status-concluido" if m.get('Status') == 'Concluído' else "mesa-status-pendente"
+                        vencedor_j1 = "vencedor-destaque" if (m.get('Status') == 'Concluído' and int(m.get('SetsJ1', 0)) > int(m.get('SetsJ2', 0))) else ""
+                        vencedor_j2 = "vencedor-destaque" if (m.get('Status') == 'Concluído' and int(m.get('SetsJ2', 0)) > int(m.get('SetsJ1', 0))) else ""
+                        
+                        st.markdown(f"""
+                        <div class="mesa-container">
+                            <div class="mesa-header">
+                                <span>🚨 Mesa {m.get('Mesa')}</span>
+                                <span class="{status_classe}">{status_txt}</span>
                             </div>
-                            <div class="jogador-linha {vencedor_j2}">
-                                <span class="jogador-nome">👤 {m.get('Jogador2')}</span>
-                                <span class="jogador-resultado">{m.get('SetsJ2')}S ({m.get('TentosJ2')}T)</span>
+                            <div class="mesa-corpo">
+                                <div class="jogador-linha {vencedor_j1}">
+                                    <span class="jogador-nome">👤 {m.get('Jogador1')}</span>
+                                    <span class="jogador-resultado">{m.get('SetsJ1', 0)}S ({m.get('TentosJ1', 0)}T)</span>
+                                </div>
+                                <div class="jogador-linha {vencedor_j2}">
+                                    <span class="jogador-nome">👤 {m.get('Jogador2')}</span>
+                                    <span class="jogador-resultado">{m.get('SetsJ2', 0)}S ({m.get('TentosJ2', 0)}T)</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    """
-                html_grade += "</div>"
-                st.markdown(html_grade, unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
             else:
                 st.info("Nenhum jogo ativo nesta rodada.")
         else:
@@ -563,7 +565,7 @@ else:
 
 
 # ==============================================================================
-# ⚙️ 6ª PARTE: PAINEL DE CONTROLE ADMIN & VIRADA DE RODADA DO SISTEMA SUÍÇO
+# ⚙️ 6ª PARTE: PAINEL DE CONTROLE ADMIN & PROTEÇÃO PREVENTIVA CONTRA ERROS NO START
 # ==============================================================================
     if "⚙️ Painel de Controle Admin" in abas_lista:
         with abas_criadas[aba_index]:
@@ -636,7 +638,7 @@ else:
                     if len(dados.get('Jogadores', [])) < 2:
                         st.error("Erro Crítico: É obrigatório ter no mínimo 2 competidores para iniciar o chaveamento.")
                     else:
-                        # Inicialização analítica preventiva para o Motor Suíço
+                        # Inicialização analítica preventiva de chaves para evitar AttributeError no motor_truco
                         for j in dados['Jogadores']:
                             j['Pts'] = j.get('Pts', 0)
                             j['Vit'] = j.get('Vit', 0)
@@ -660,12 +662,21 @@ else:
                         }
                         
                         dados['Rodadas'] = []
-                        primeira_rodada = motor_truco.gerar_rodada_suica(dados, 1)
-                        dados['Rodadas'].append(primeira_rodada)
                         
-                        gerenciador_dados.salvar_dados(dados)
-                        st.success("Campeonato Oficial Iniciado! Chaves do Sistema Suíço Geradas.")
-                        st.rerun()
+                        # 🛡️ PROTEÇÃO TRATADA CONTRA ERROS DE ATRIBUTO NO SEU MOTOR EXTERNO
+                        try:
+                            primeira_rodada = motor_truco.gerar_rodada_suica(dados, 1)
+                            if primeira_rodada is not None:
+                                dados['Rodadas'].append(primeira_rodada)
+                                gerenciador_dados.salvar_dados(dados)
+                                st.success("Campeonato Oficial Iniciado! Chaves do Sistema Suíço Geradas.")
+                                st.rerun()
+                            else:
+                                st.error("O motor de emparelhamento retornou um objeto nulo (None). Verifique as regras de chaveamento.")
+                        except AttributeError as e:
+                            st.error(f"❌ Erro de Atributo detectado no motor_truco: {str(e)}. Certifique-se de que o arquivo 'motor_truco.py' aceita a estrutura padrão de dicionário.")
+                        except Exception as ex:
+                            st.error(f"❌ Erro inesperado ao processar chaveamento: {str(ex)}")
                         
                 st.markdown("### 👥 Gerenciador Analítico de Inscritos (Exclusão)")
                 if dados.get('Jogadores'):
@@ -726,7 +737,7 @@ else:
                         gerenciador_dados.salvar_dados(dados)
                         st.rerun()
                 else:
-                    st.warning("🔒 Bloqueio de Próxima Fase: There are pending tables in this round that need to be filled before advancing.")
+                    st.warning("🔒 Bloqueio de Próxima Fase: Há mesas pendentes nesta rodada que precisam ser preenchidas antes de avançar.")
                     
             if st.button("🚨 PURGAR BANCO DE DADOS (Zerar Todo o Sistema)"):
                 gerenciador_dados.limpar_banco_dados()
