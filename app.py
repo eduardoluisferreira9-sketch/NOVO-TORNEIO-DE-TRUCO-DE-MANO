@@ -241,7 +241,7 @@ if modo_telao:
         </div>
     """, unsafe_allow_html=True)
     
-if dados['Status'] == 'Em Andamento':
+    if dados['Status'] == 'Em Andamento':
         renderizar_cronometro()
         
     if st.session_state.tela_telao == "jogos":
@@ -292,7 +292,6 @@ if dados['Status'] == 'Em Andamento':
         if dados.get('Jogadores'):
             lista_classificada = motor_truco.processar_classificacao(dados)
             
-            # Mostra o pódio dinâmico e o cantador de flor direto na TV
             exibir_podio_arena(lista_classificada)
             
             df_class = pd.DataFrame(lista_classificada)
