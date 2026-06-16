@@ -7,6 +7,22 @@ from datetime import datetime
 import gerenciador_dados
 import motor_truco
 
+# =======================================================
+# 💾 INICIALIZAÇÃO DE DADOS PERSISTENTES (ANTI-RESET)
+# =======================================================
+if 'dados' not in st.session_state:
+    st.session_state['dados'] = gerenciador_dados.carregar_dados()
+
+# Atribui a variável global que todo o sistema usa
+dados = st.session_state['dados']
+
+# Garante que o dicionário do Cronômetro exista com um padrão se o JSON estiver vazio
+if 'Cronometro' not in dados:
+    dados['Cronometro'] = {
+        'TempoRestanteSegundos': 3300,  # 55 minutos padrão
+        'Ativo': False,
+        'FimRodada': False
+    }
 # 🃏 CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(
     page_title="Central de Torneios de Truco - Planta Baixa",
