@@ -164,18 +164,20 @@ def exibir_podio_arena(lista_classificada):
 # =========================================================
 # ⏱️ CRONÔMETRO
 # =========================================================
-@st.fragment
+@st.fragment(run_every=1)
 def renderizar_cronometro():
-    c_dados = st.session_state.dados.get('Cronometro', {'TempoRestanteSegundos': 2700, 'Ativo': False, 'FimRodada': False})
+    c_dados = dados.get('Cronometro', {'TempoRestanteSegundos': 2700, 'Ativo': False, 'FimRodada': False})
+    
+    # Se o cronômetro estiver ativo, reduz 1 segundo a cada passada automática do fragmento
     if c_dados['Ativo'] and c_dados['TempoRestanteSegundos'] > 0:
-        time.sleep(1)
         c_dados['TempoRestanteSegundos'] -= 1
-        if c_dados['TempoRestanteSegundos'] == 0:
+        
+    if c_dados['TempoRestanteSegundos'] == 0:
             c_dados['Ativo'] = False
             c_dados['FimRodada'] = True
-            st.session_state.dados['Cronometro'] = c_dados
-            gerenciador_dados.salvar_dados(st.session_state.dados)
-        st.rerun() 
+            dados['Cronometro'] = c_dados
+            gerenciador_dados.salvar_dados(dados)
+            st.rerun()
         
     segundos_totais = c_dados['TempoRestanteSegundos']
     minutos = segundos_totais // 60
