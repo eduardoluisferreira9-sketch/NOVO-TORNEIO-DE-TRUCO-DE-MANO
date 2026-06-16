@@ -1,100 +1,116 @@
 /* ==========================================================================
-   🏆 ARENA TRUCO PREMIUM - DESIGN MINIMALISTA PROFISSIONAL
+   👑 ARENA TRUCO DEFINITIVA - PALETA DO COMPLEMENTO CLÁSSICO COM REVESTIMENTO MODERNO
    ========================================================================== */
 
-/* 🌌 FUNDO SÓLIDO PREMIUM (FIM DA POLUIÇÃO VISUAL) */
+/* 🟢 ÁREA PRINCIPAL: VERDE FELTRO FLORESTA PROFUNDO (FIDELIDADE À IMAGE_F84CAD.JPG) */
 .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
-    background-color: #0b0d13 !important;
+    background-color: #052614 !important; /* O tom exato de verde escuro de mesa da foto */
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
 }
 
-/* 📋 BARRA LATERAL ORGANIZADA */
+/* 📋 BARRA LATERAL: PRETO SÓLIDO COM LINHA DE MARCAÇÃO DOURADA */
 [data-testid="stSidebar"] {
-    background-color: #111420 !important;
-    border-right: 1px solid #1f2438 !important;
+    background-color: #000000 !important;
+    border-right: 2px solid #ffca28 !important; /* Risco dourado da imagem */
 }
-[data-testid="stSidebar"] section, [data-testid="stSidebar"] label, [data-testid="stSidebar"] span {
+
+/* Garante leitura total dos textos e checkboxes na lateral preta */
+[data-testid="stSidebar"] section, 
+[data-testid="stSidebar"] label, 
+[data-testid="stSidebar"] span, 
+[data-testid="stSidebar"] p {
     color: #ffffff !important;
     font-weight: 600 !important;
 }
 
-/* 📝 CARD DE INSCRIÇÃO ELEGANTE (CORREÇÃO DE CONTRASTE) */
+/* 📝 ESTRUTURA DO CARD DE INSCRIÇÃO (MELHORIA PRESERVADA, CORES ADEGRADAS) */
 div.stForm, [data-testid="stForm"] {
-    background-color: #151926 !important; /* Grafite azulado chique */
-    border: 1px solid #283149 !important;
-    border-radius: 10px !important;
-    padding: 25px !important;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+    background-color: transparent !important; /* Sem blocos cinzas, integrado ao feltro */
+    border: 2px solid #ffca28 !important; /* Contorno fino dourado identico à foto */
+    border-radius: 12px !important; /* Arredondado moderno que ajustamos */
+    padding: 30px !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important;
 }
 
-/* Títulos e Textos Principais */
-h1, h2, h3, label, [data-testid="stMarkdownContainer"] p {
-    color: #ffffff !important; /* Branco total para leitura perfeita */
+/* Textos e Labels da Arena Principal */
+h1, h2, h3, label, [data-testid="stMarkdownContainer"] p, .stMarkdown {
+    color: #ffffff !important; /* Escritas em branco puro para contraste total no verde */
     font-weight: 600 !important;
 }
-h1 {
-    font-weight: 800 !important;
-}
+h1 { font-weight: 800 !important; }
 
-/* 📥 CAIXAS DE INPUTS MODERNAS (SEM BLOCOS BRANCOS GIGANTES) */
+/* 📥 CAIXAS DE PREENCHIMENTO (FORMA MODERNA + ESTILO DA FOTO) */
 .stTextInput input, [data-testid="stTextInput"] input {
-    background-color: #1d2436 !important; /* Fundo escuro fosco */
-    color: #ffffff !important; /* Texto digitado em branco puro */
-    border: 1px solid #3b4766 !important;
-    border-radius: 6px !important;
-    padding: 10px 14px !important;
-    font-size: 1rem !important;
-}
-/* Quando clica para digitar, a caixa acende em dourado */
-.stTextInput input:focus, [data-testid="stTextInput"] input:focus {
-    border-color: #ffca28 !important;
-    box-shadow: 0 0 8px rgba(255, 202, 40, 0.3) !important;
+    background-color: #03140b !important; /* Fundo interno escuro fosco de alta classe */
+    color: #ffffff !important; /* Escrita interna em branco nítido */
+    border: 2px solid #ffca28 !important; /* Borda dourada contínua do print */
+    border-radius: 8px !important; /* Cantos levemente suavizados */
+    padding: 12px 16px !important; /* Espaçamento de digitação confortável preservado */
+    font-size: 1.05rem !important;
+    font-weight: bold !important;
+    transition: all 0.2s ease-in-out !important;
 }
 
-/* 🚀 BOTÃO DE INSCRIÇÃO PREMIUM */
+/* Efeito de foco quando o usuário clica na caixa */
+.stTextInput input:focus, [data-testid="stTextInput"] input:focus {
+    box-shadow: 0 0 12px rgba(255, 202, 40, 0.4) !important;
+    border-color: #ffffff !important; /* Brilha a borda sutilmente para avisar que está digitando */
+    outline: none !important;
+}
+
+/* 🚀 BOTÃO DE INSCRIÇÃO (BARRA LARGA MODERNA + ESTILO PRETO E OURO) */
 .stButton button, [data-testid="stBaseButton-secondary"] {
-    background-color: #ffca28 !important; /* Dourado Ouro Sólido */
-    color: #0b0d13 !important; /* Texto em preto para leitura perfeita */
-    font-size: 1rem !important;
+    background-color: #000000 !important; /* Fundo preto sólido do botão 'Autenticar' */
+    color: #ffca28 !important; /* Escrita em dourado */
+    border: 2px solid #ffca28 !important; /* Moldura fina dourada */
+    font-size: 1.1rem !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
     letter-spacing: 1px !important;
-    padding: 12px 24px !important;
-    border: none !important;
-    border-radius: 6px !important;
-    width: 100% !important; /* Botão largo moderno */
-    box-shadow: 0 4px 12px rgba(255, 179, 0, 0.2) !important;
+    padding: 14px 28px !important; /* Altura moderna e confortável */
+    border-radius: 8px !important;
+    width: 100% !important; /* Mantém a melhoria do botão largo ocupando toda a base */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
+    cursor: pointer !important;
     transition: all 0.2s ease !important;
 }
+
+/* Feedback visual de clique e passagem de mouse */
 .stButton button:hover {
-    background-color: #ffee55 !important;
-    color: #0b0d13 !important;
-    box-shadow: 0 6px 15px rgba(255, 179, 0, 0.4) !important;
+    background-color: #ffca28 !important; /* Inversão elegante de cores no hover */
+    color: #000000 !important;
+    box-shadow: 0 0 15px rgba(255, 202, 40, 0.4) !important;
 }
 
-/* 🟢 EXIBIÇÃO DAS MESAS NO TELÃO (O VERDE FELTRO FICA SÓ AQUI) */
+/* 📊 BARRA DE RODAPÉ / NOTIFICAÇÃO DE ASSINATURA */
+.dev-assinatura-container, [data-testid="stNotification"] {
+    background-color: #000000 !important;
+    border: 2px solid #ffca28 !important;
+    border-radius: 8px !important;
+    padding: 12px 20px !important;
+    color: #ffffff !important;
+}
+
+/* 📺 GRID EXCLUSIVO DAS MESAS DE CONFRONTOS (PRESERVADO PARA AS OUTRAS ABAS) */
 .grade-telao-dinamica {
     display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
-    gap: 16px !important;
+    grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)) !important;
+    gap: 18px !important;
 }
 .mesa-container {
-    background: linear-gradient(135px, #008a3c 0%, #006b2e 100%) !important; /* Verde feltro oficial de mesa */
-    border: 3px solid #5d4037 !important; /* Moldura amadeirada */
-    border-top: 6px solid #8d6e63 !important;
+    background-color: #03140b !important;
+    border: 2px solid #ffca28 !important;
     border-radius: 12px !important;
     padding: 16px !important;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5) !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5) !important;
 }
-.jogador-nome {
-    color: #ffff00 !important; /* Nome do atleta em Amarelo Ouro */
-    font-size: 1.35rem !important;
-    font-weight: 900 !important;
-    text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.9) !important;
+.jogador-nome { 
+    color: #ffca28 !important; 
+    font-size: 1.3rem !important;
+    font-weight: bold; 
 }
-.jogador-resultado {
-    color: #ffffff !important;
-    background-color: #000000 !important;
-    border: 1px solid #ffca28 !important;
-    font-size: 1.2rem !important;
+.jogador-resultado { 
+    background-color: #000000 !important; 
+    color: #ffffff !important; 
+    border: 1px solid #ffca28 !important; 
 }
