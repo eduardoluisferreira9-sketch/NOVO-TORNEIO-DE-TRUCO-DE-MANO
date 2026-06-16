@@ -13,7 +13,19 @@ st.set_page_config(
     page_icon="🃏",
     layout="wide"
 )
+def carregar_estilo_premium():
+    """Garante o carregamento do feltro verde e dourado sem travar o Streamlit"""
+    base_dir = os.path.dirname(__file__)
+    if os.path.basename(base_dir) == "pages":
+        css_path = os.path.join(os.path.dirname(base_dir), "estilo.css")
+    else:
+        css_path = os.path.join(base_dir, "estilo.css")
+        
+    if os.path.exists(css_path):
+        with open(css_path, encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
+carregar_estilo_premium()
 # =========================================================
 # 🔒 ARQUITETURA DE PERSISTÊNCIA INQUEBRÁVEL (FIM DOS RESETS)
 # =========================================================
