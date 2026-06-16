@@ -16,9 +16,6 @@
     padding: 15px !important;
     margin-bottom: 20px !important;
 }
-.dev-titulo { font-size: 0.75rem !important; color: #ffca28 !important; text-transform: uppercase !important; letter-spacing: 2px !important; }
-.dev-nome { font-size: 1.1rem !important; font-weight: bold !important; color: #ffffff !important; }
-.dev-tag { font-size: 0.8rem !important; color: #ffca28 !important; }
 
 /* 🏆 PÓDIO DOS CAMPEÕES */
 .podio-container {
@@ -49,7 +46,7 @@
     gap: 16px !important;
 }
 .mesa-container {
-    background: linear-gradient(135px, #008a3c 0%, #006b2e 100%) !important; /* 🟢 Verde feltro de alta definição */
+    background: linear-gradient(135px, #008a3c 0%, #006b2e 100%) !important; /* 🟢 Verde feltro profissional */
     border: 3px solid #5d4037 !important; /* Moldura de madeira marrom */
     border-top: 6px solid #8d6e63 !important; 
     border-radius: 12px !important;
@@ -123,7 +120,22 @@
 .vencedor-destaque .jogador-nome { color: #000000 !important; text-shadow: none !important; }
 .vencedor-destaque .jogador-resultado { background-color: #000000 !important; color: #ffff00 !important; }
 
-/* 📝 COMPONENTES DE FORMULÁRIO NATIVOS (MANTENDO LEGIBILIDADE) */
+/* 📝 RESTAURAÇÃO COMPLETA DE INPUTS E BOTÕES DO STREAMLIT */
 h1, h2, h3, label, p, .stMarkdown { color: #ffffff !important; }
-.stTextInput input { background-color: #ffffff !important; color: #0f111a !important; border: 2px solid #2e3b52 !important; border-radius: 6px !important; }
-.stButton button { background-color: #ffffff !important; color: #0f111a !important; font-weight: bold !important; border-radius: 6px !important; }
+
+/* Garante caixas de texto com fundo branco limpo e texto escuro legível */
+.stTextInput input, [data-testid="stTextInput"] input { 
+    background-color: #ffffff !important; 
+    color: #0f111a !important; 
+    border: 2px solid #2e3b52 !important; 
+    border-radius: 6px !important;
+}
+
+/* Garante botões com fundo branco e escrita preta nítida */
+.stButton button, [data-testid="stBaseButton-secondary"] { 
+    background-color: #ffffff !important; 
+    color: #0f111a !important; 
+    font-weight: bold !important; 
+    border-radius: 6px !important;
+    border: 1px solid #cccccc !important;
+}
