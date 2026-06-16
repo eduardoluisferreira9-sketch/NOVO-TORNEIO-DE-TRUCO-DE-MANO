@@ -3,7 +3,7 @@ import gerenciador_dados
 
 def processar_classificacao(dados):
     """Aplica os 9 critérios de desempate oficiais do Truco de Mano."""
-    jogadores = dados.get('Jogadores', [])  # Agora é uma lista de dicionários: [{'Nome': '...', 'Entidade': '...'}]
+    jogadores = dados.get('Jogadores', [])  # Lista de dicionários: [{'Nome': '...', 'Entidade': '...'}]
     rodadas = dados.get('Rodadas', [])
     
     tabela = {}
@@ -86,9 +86,14 @@ def processar_classificacao(dados):
     
     return lista_tabela
 
-def gerar_proxima_rodada(dados):
-    """Realiza o sorteio ALEATÓRIO evitando repetição de jogos e confrontos da mesma entidade."""
+def gerar_rodada_suica(dados, numero_rodada):
+    """
+    Realiza o sorteio ALEATÓRIO evitando repetição de jogos e confrontos da mesma entidade.
+    Rebatizada para fins de compatibilidade estrutural com o app.py.
+    """
     jogadores_cadastrados = dados.get('Jogadores', [])
+    if not jogadores_cadastrados:
+        return None
     
     # Mapeia quem é de qual entidade para consulta rápida
     entidades = {j['Nome']: j.get('Entidade', 'S/E') for j in jogadores_cadastrados}
@@ -121,7 +126,7 @@ def gerar_proxima_rodada(dados):
         
         # Copia a lista atual para tentar fazer os pares desta rodada
         pool = list(lista_sorteio)
-        random.shuffle(pool) # Embaralha totalmente (Garante o Sorteio Aleatório solicitado)
+        random.shuffle(pool) # Embaralha totalmente (Garante o Sorteio Aleatório)
         
         parceiros_da_rodada = []
         sucesso_rodada = True
@@ -144,7 +149,7 @@ def gerar_proxima_rodada(dados):
                         oponente_encontrado = candidato
                         break
             
-            # Se não achou ninguém válido, essa combinação que o embaralhamento gerou quebrou. Reseta a rodada.
+            # Se não achou ninguém válido, essa combinação quebrou. Reseta a rodada.
             if oponente_encontrado is None:
                 sucesso_rodada = False
                 break
@@ -168,7 +173,6 @@ def gerar_proxima_rodada(dados):
             
     # Se por pane matemática de fim de torneio travar (ex: impossível não repetir), gera o melhor possível
     if tentativas_globais >= 100 and len(lista_sorteio) > 0:
-        # Força um sorteio puramente aleatório sem travas para o torneio não congelar
         random.shuffle(lista_sorteio)
         while len(lista_sorteio) > 1:
             j1 = lista_sorteio.pop(0)
@@ -179,24 +183,20 @@ def gerar_proxima_rodada(dados):
             })
             mesa_id += 1
 
-    # Configuração automática e instantânea do Chapéu (Folga)
+    # Configuração automática e instantânea do Chapéu (Folga) - Ajustado para placar padrão de Sets
     for m in novas_mesas:
         if m['Jogador1'] == "CHAPÉU" or m['Jogador2'] == "CHAPÉU":
             m['Status'] = 'Concluído'
             if m['Jogador1'] == "CHAPÉU":
                 m['SetsJ1'], m['SetsJ2'] = 0, 2
-                m['TentosJ1'], m['TentosJ2'] = 0, 72
+                m['TentosJ1'], m['TentosJ2'] = 0, 24
             else:
                 m['SetsJ1'], m['SetsJ2'] = 2, 0
-                m['TentosJ1'], m['TentosJ2'] = 72, 0
+                m['TentosJ1'], m['TentosJ2'] = 24, 0
 
-    nova_rodada_num = len(rodadas_passadas) + 1
-    nova_rodada = {
-        'Numero': nova_rodada_num,
+    # Retorna o dicionário estruturado para o app.py gerenciar a persistência
+    return {
+        'Numero': numero_rodada,
         'Status': 'Em Andamento',
         'Mesas': novas_mesas
     }
-    
-    dados['Rodadas'].append(nova_rodada)
-    dados['RodadaAtual'] = nova_rodada_num
-    gerenciador_dados.salvar_dados(dados)
