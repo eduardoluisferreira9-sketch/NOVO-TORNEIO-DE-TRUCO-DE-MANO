@@ -1,0 +1,163 @@
+/* ==========================================================================
+   🎨 ESTILIZAÇÃO COMPLETA: CENTRAL DE TORNEIOS DE TRUCO (VERSÃO ARENA PRO)
+   ========================================================================== */
+
+/* Prevenção de rolagem no modo telão */
+.modo-telao-ativo, .modo-telao-ativo body {
+    overflow: hidden !important;
+    max-height: 100vh !important;
+}
+
+.block-container {
+    padding-top: 1rem !important;
+    padding-bottom: 0rem !important;
+}
+
+/* 📋 ASSINATURA PROFISSIONAL DO DESENVOLVEDOR */
+.dev-assinatura-container {
+    background: linear-gradient(135px, #0f1712 0%, #050806 100%);
+    border: 1px solid #1e3326;
+    border-left: 4px solid #ffbf00;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.dev-titulo {
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 2px;
+}
+
+.dev-nome {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #ffffff;
+    text-shadow: 0 0 8px rgba(255,191,0,0.2);
+}
+
+.dev-tag {
+    font-size: 0.8rem;
+    color: #ffbf00;
+    font-weight: 500;
+}
+
+/* 🏆 PODIO PREMIUM DOS 4 FINALISTAS */
+.podio-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+    width: 100%;
+}
+
+.podio-card {
+    background: #111613;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+}
+
+.podio-1 { border: 2px solid #ffee00; background: linear-gradient(180px, rgba(255,238,0,0.05) 0%, #111613 100%); }
+.podio-2 { border: 2px solid #cccccc; background: linear-gradient(180px, rgba(204,204,204,0.05) 0%, #111613 100%); }
+.podio-3 { border: 2px solid #cd7f32; background: linear-gradient(180px, rgba(205,127,50,0.05) 0%, #111613 100%); }
+.podio-4 { border: 2px solid #3d5a4a; }
+
+.podio-posicao { font-size: 1.5rem; font-weight: bold; margin-bottom: 5px; }
+.podio-1 .podio-posicao { color: #ffee00; }
+.podio-2 .podio-posicao { color: #cccccc; }
+.podio-3 .podio-posicao { color: #cd7f32; }
+.podio-4 .podio-posicao { color: #a3cfb6; }
+
+.podio-nome { font-size: 1.15rem; font-weight: bold; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 🌸 CARD DO REI DA FLOR */
+.card-rei-flor {
+    background: linear-gradient(135px, #2b1122 0%, #14050f 100%);
+    border: 2px solid #ff4da6;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    box-shadow: 0 0 15px rgba(255, 77, 166, 0.2);
+}
+.rei-flor-titulo { color: #ff4da6; font-weight: bold; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; }
+.rei-flor-nome { font-size: 1.3rem; font-weight: bold; color: #ffffff; margin-top: 5px; }
+
+/* 📺 GRADE DINÂMICA DO TELÃO */
+.grade-telao-dinamica {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)) !important;
+    gap: 12px !important;
+    width: 100% !important;
+}
+
+.mesa-container {
+    background: linear-gradient(135px, #1a241f 0%, #111815 100%);
+    border: 2px solid #3d5a4a;
+    border-radius: 10px;
+    padding: 12px 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.mesa-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    font-size: 1.15rem;
+    border-bottom: 2px solid #2d3e35;
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+}
+
+.mesa-status-pendente {
+    color: #ffaa00;
+    background-color: rgba(255, 170, 0, 0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    border: 1px solid rgba(255, 170, 0, 0.3);
+}
+
+.mesa-status-concluido {
+    color: #2da750;
+    background-color: rgba(45, 167, 80, 0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    border: 1px solid rgba(45, 167, 80, 0.3);
+}
+
+.jogador-linha {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 6px;
+    font-size: 1.1rem;
+}
+
+.jogador-nome { color: #f5f5f5; font-weight: 500; }
+.jogador-resultado { color: #aaa; font-family: 'Courier New', monospace; font-weight: bold; background-color: rgba(0,0,0,0.3); padding: 1px 6px; border-radius: 4px; }
+.vencedor-destaque { background-color: rgba(45, 167, 80, 0.12) !important; border-radius: 4px; }
+.vencedor-destaque .jogador-nome { color: #2da750 !important; font-weight: bold; }
+
+/* 🏆 CARD HISTÓRICO GALERIA */
+.galeria-card {
+    background: linear-gradient(135px, #221c11 0%, #14100a 100%);
+    border: 1px solid #614b24;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+}
+.galeria-header { display: flex; justify-content: space-between; border-bottom: 1px solid #47371b; padding-bottom: 6px; margin-bottom: 10px; }
+.galeria-titulo-evento { font-size: 1.2rem; font-weight: bold; color: #ffbf00; }
+.galeria-data { color: #8c8270; font-size: 0.9rem; }
+.galeria-linha-campeao { font-size: 1.15rem; font-weight: bold; color: #fff; }
+.galeria-ouro { color: #ffee00; }
