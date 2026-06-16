@@ -114,3 +114,24 @@ h1 { font-weight: 800 !important; }
     color: #ffffff !important; 
     border: 1px solid #ffca28 !important; 
 }
+
+/* ==========================================================================
+   ⚡ TRAVA ANTI-PISCADA (ESTABILIDADE DO CRONÔMETRO)
+   ========================================================================== */
+
+/* Remove o efeito de transição cinza/opaco que o Streamlit faz ao recarregar */
+div[data-testid="stAppViewBlockContainer"] {
+    transition: none !important;
+}
+
+/* Evita oscilação visual em elementos carregando */
+.stMarkdown, .stButton, .stTextInput, [data-testid="stForm"] {
+    animation: none !important;
+    transition: none !important;
+}
+
+/* Deixa o texto do cronômetro fixo e sem atraso de renderização */
+span[data-testid="stMarkdownContainer"] {
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}
