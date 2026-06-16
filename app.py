@@ -125,12 +125,12 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-# SIDEBAR CORPORATIVA DE SEGURANÇA E ASSINATURA TÉCNICA
+# SIDEBAR CORPORATIVA
 st.sidebar.markdown(f"""
     <div class="dev-assinatura-container">
         <div class="dev-titulo">Engenharia de Software</div>
         <div class="dev-nome">🚀 {gerenciador_dados.NOME_CRIADOR}</div>
-        <div class="dev-tag">Plataforma Oficial de Competitions</div>
+        <div class="dev-tag">Plataforma Oficial de Competições</div>
     </div>
 """, unsafe_allow_html=True)
 
@@ -185,7 +185,6 @@ def obter_tempo_restante_dinamico():
     return c_dados['TempoRestanteSegundos'], c_dados
 
 def injetar_cronometro_javascript(key_prefix="default"):
-    """ Injeta o motor em JavaScript rodando no navegador cliente independente do Python """
     segundos_totais, c_dados = obter_tempo_restante_dinamico()
     ativo_js = "true" if c_dados['Ativo'] else "false"
     
@@ -246,7 +245,7 @@ def exibir_podio_arena(lista_classificada):
     if not lista_classificada: return
     c1 = lista_classificada[0]['Nome'] if len(lista_classificada) > 0 else "---"
     c2 = lista_classificada[1]['Nome'] if len(lista_classificada) > 1 else "---"
-    c3 = lista_classificada[2]['Nome'] if len(lista_classificada) > 2 else "---"
+    c3 = lista_classificada[2]['Nome'] if len(lista_classificada) > 3 else "---"
     
     st.markdown(f"""
         <div style='display: flex; justify-content: space-around; background-color: #151b18; padding: 6px; border-radius: 8px; border: 1px solid #3d4f45; text-align: center; margin-bottom: 5px;'>
@@ -281,7 +280,6 @@ if modo_telao:
             if rodada_atual and 'Mesas' in rodada_atual:
                 mesas = rodada_atual.get('Mesas', [])
                 
-                # 📄 PAGINAÇÃO CRÍTICA FIXA EM 6 MESAS POR EXIBIÇÃO CONTRA CORTES
                 MESAS_POR_PAGINA = 6
                 total_mesas = len(mesas)
                 total_paginas = (total_mesas + MESAS_POR_PAGINA - 1) // MESAS_POR_PAGINA
@@ -301,7 +299,6 @@ if modo_telao:
                         status_txt = "EM ANDAMENTO" if m.get('Status') == 'Pendente' else "CONCLUÍDO"
                         status_classe = "mesa-status-concluido" if m.get('Status') == 'Concluído' else "mesa-status-pendente"
                         
-                        # Atribuição dinâmica de cores pós-resultado
                         vencedor_j1 = ""
                         vencedor_j2 = ""
                         if m.get('Status') == 'Concluído':
@@ -331,7 +328,7 @@ if modo_telao:
                         </div>
                         """, unsafe_allow_html=True)
                 
-                time.sleep(10) # Ciclo de tempo estático por página de mesa
+                time.sleep(10)
                 st.session_state.pagina_mesas += 1
                 if st.session_state.pagina_mesas >= total_paginas:
                     st.session_state.tela_telao = "classificacao"
@@ -361,7 +358,7 @@ if modo_telao:
         else:
             st.warning("Nenhum competidor registrado no banco.")
             
-        time.sleep(8) # Tempo fixo de exibição do ranking antes de rotacionar
+        time.sleep(8)
         st.session_state.tela_telao = "jogos"
         st.session_state.pagina_mesas = 0
         st.rerun()
@@ -377,7 +374,6 @@ else:
     ip_local = gerenciador_dados.obter_ip_da_rede()
     st.info(f"🌐 **Rede Local Ativa:** Acesse por outros dispositivos usando: `http://{ip_local}:8501`")
 
-    # Montagem condicional dinâmica e segura das Abas Operacionais
     abas_lista = ["📊 Classificação Geral"]
     
     if dados['Status'] == 'Configuração':
@@ -442,7 +438,7 @@ else:
 
 
 # ==============================================================================
-# 🖨️ 5ª PARTE: ABA: LANÇAR MESAS E IMPRESSÃO DE SÚMULAS TÉRMICAS
+# 🖨️ 5ª PARTE: ABA: LANÇAR MESAS (REGRAS OFICIAIS DE PONTUAÇÃO 3X0 / 72X46)
 # ==============================================================================
     if "⚔️ Lançar Mesas" in abas_lista:
         with abas_criadas[aba_index]:
@@ -491,7 +487,6 @@ else:
                     with col_alvo:
                         status_classe = "mesa-status-concluido" if m['Status'] == 'Concluído' else "mesa-status-pendente"
                         
-                        # Atribuição dinâmica de cores pós-resultado para o painel de lançamento
                         vencedor_j1 = ""
                         vencedor_j2 = ""
                         if m['Status'] == 'Concluído':
@@ -525,14 +520,41 @@ else:
                             
                         with st.expander(f"📝 Lançar Placar - Mesa {m['Mesa']}"):
                             form_key = f"form_mesa_{m['Mesa']}_{rodada_atual_num}"
-                            opcoes_sets = ["Aguardando...", f"{m['Jogador1']} 2 x 0", f"{m['Jogador2']} 2 x 0", f"{m['Jogador1']} 2 x 1", f"{m['Jogador2']} 2 x 1"]
+                            opcoes_sets = [
+                                "Aguardando...", 
+                                f"{m['Jogador1']} 2 x 0 (Ganha 3x0 - 72 Tentos)", 
+                                f"{m['Jogador2']} 2 x 0 (Ganha 3x0 - 72 Tentos)", 
+                                f"{m['Jogador1']} 2 x 1", 
+                                f"{m['Jogador2']} 2 x 1"
+                            ]
                             escolha_set = st.selectbox("Qual o placar em Sets?", opcoes_sets, key=f"sel_{form_key}")
                             
-                            t1_raw, t2_raw = "0", "0"
-                            if "2 x 1" in escolha_set:
-                                col_t1, col_t2 = st.columns(2)
-                                with col_t1: t1_raw = st.text_input(f"Tentos de {m['Jogador1']}", value=str(m.get('TentosJ1', 0)), key=f"t1_{form_key}")
-                                with col_t2: t2_raw = st.text_input(f"Tentos de {m['Jogador2']}", value=str(m.get('TentosJ2', 0)), key=f"t2_{form_key}")
+                            t1_int, t2_int = 0, 0
+                            
+                            # APLICAÇÃO DA REGRA DE NEGÓCIO EXATA SOLICITADA
+                            if escolha_set != "Aguardando...":
+                                if "2 x 0" in escolha_set:
+                                    # Se J1 ganhou de 2x0
+                                    if escolha_set.startswith(m['Jogador1']):
+                                        st.success(f"🏆 {m['Jogador1']} ganha por 3x0 (72 Tentos fixos).")
+                                        t1_int = 72
+                                        # Campo aberto para lançar os tentos do perdedor com limite máximo de 46
+                                        t2_int = st.number_input(f"Tentos feitos por {m['Jogador2']} (Máximo 46):", min_value=0, max_value=46, value=0, key=f"t2_{form_key}")
+                                    # Se J2 ganhou de 2x0
+                                    else:
+                                        st.success(f"🏆 {m['Jogador2']} ganha por 3x0 (72 Tentos fixos).")
+                                        t2_int = 72
+                                        # Campo aberto para lançar os tentos do perdedor com limite máximo de 46
+                                        t1_int = st.number_input(f"Tentos feitos por {m['Jogador1']} (Máximo 46):", min_value=0, max_value=46, value=0, key=f"t1_{form_key}")
+                                
+                                elif "2 x 1" in escolha_set:
+                                    col_t1, col_t2 = st.columns(2)
+                                    with col_t1: t1_raw = st.text_input(f"Tentos de {m['Jogador1']}", value=str(m.get('TentosJ1', 0)), key=f"t1_{form_key}")
+                                    with col_t2: t2_raw = st.text_input(f"Tentos de {m['Jogador2']}", value=str(m.get('TentosJ2', 0)), key=f"t2_{form_key}")
+                                    try:
+                                        t1_int, t2_int = int(t1_raw), int(t2_raw)
+                                    except:
+                                        t1_int, t2_int = 0, 0
                             
                             col_f1, col_f2 = st.columns(2)
                             with col_f1: f1_num = st.number_input(f"🌸 Flores de {m['Jogador1']}", min_value=0, value=int(m.get('FloresJ1', 0)), step=1, key=f"f1_{form_key}")
@@ -544,19 +566,19 @@ else:
                                     alvo['Status'] = 'Concluído'
                                     alvo['FloresJ1'] = f1_num
                                     alvo['FloresJ2'] = f2_num
-                                    try: t1_int, t2_int = int(t1_raw), int(t2_raw)
-                                    except Exception: t1_int, t2_int = 0, 0
                                     
+                                    # Executa a gravação estrutural das chaves baseada na escolha
                                     if escolha_set.startswith(alvo['Jogador1']):
-                                        alvo['SetsJ1'], alvo['SetsJ2'] = 2, (1 if "2 x 1" in escolha_set else 0)
-                                        if "2 x 0" in escolha_set: alvo['TentosJ1'], alvo['TentosJ2'] = 24, 0
-                                        else: alvo['TentosJ1'], alvo['TentosJ2'] = t1_int, t2_int
+                                        alvo['SetsJ1'] = 3 if "2 x 0" in escolha_set else 2
+                                        alvo['SetsJ2'] = 0 if "2 x 0" in escolha_set else 1
+                                        alvo['TentosJ1'] = t1_int
+                                        alvo['TentosJ2'] = t2_int
                                     else:
-                                        alvo['SetsJ1'], alvo['SetsJ2'] = (1 if "2 x 1" in escolha_set else 0), 2
-                                        if "2 x 0" in escolha_set: alvo['TentosJ1'], alvo['TentosJ2'] = 0, 24
-                                        else: alvo['TentosJ1'], alvo['TentosJ2'] = t1_int, t2_int
+                                        alvo['SetsJ1'] = 0 if "2 x 0" in escolha_set else 1
+                                        alvo['SetsJ2'] = 3 if "2 x 0" in escolha_set else 2
+                                        alvo['TentosJ1'] = t1_int
+                                        alvo['TentosJ2'] = t2_int
                                         
-                                    # Preserva sincronia linear do tempo real durante as persistências em arquivo
                                     segundos_restantes_agora, _ = obter_tempo_restante_dinamico()
                                     dados['Cronometro']['TempoRestanteSegundos'] = segundos_restantes_agora
                                     if dados['Cronometro']['Ativo']:
@@ -671,7 +693,6 @@ else:
                 st.info("🔒 **Inscrições Trancadas:** O torneio está ativo.")
                 st.markdown(f"### 🛡️ Cronômetro da Arena — Rodada {dados['RodadaAtual']}")
                 
-                # INJEÇÃO DO CRONÔMETRO JAVASCRIPT ISOLADO NO PAINEL DO ADMIN CONTRA RESETS VISUAIS
                 injetar_cronometro_javascript(key_prefix="admin")
                 
                 restante_real, c_dados = obter_tempo_restante_dinamico()
