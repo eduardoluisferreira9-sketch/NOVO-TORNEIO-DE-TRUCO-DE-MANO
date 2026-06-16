@@ -8,7 +8,7 @@ import gerenciador_dados
 import motor_truco
 
 # ==============================================================================
-# 💾 INICIALIZAÇÃO DE DADOS PERSISTENTES (ANTI-RESET DE PÁGINA)
+# 💾 1ª PARTE: INICIALIZAÇÃO DE DADOS PERSISTENTES (ANTI-RESET DE PÁGINA)
 # ==============================================================================
 dados_persistidos = gerenciador_dados.carregar_dados()
 
@@ -61,35 +61,97 @@ def carregar_estilo_premium():
 
 st.markdown(carregar_estilo_premium(), unsafe_allow_html=True)
 
-# Inject regras CSS de mídia de impressão diretamente para garantir compatibilidade Elgin I9
+# Injeção global de CSS com as classes necessárias para renderização correta do Telão e Impressão
+estilos_css = ""
 if os.path.exists("estilo.css"):
     with open("estilo.css", "r", encoding="utf-8") as f:
         estilos_css = f.read()
     
-    st.markdown(f"""
-    <style>
-        {estilos_css}
-        @media print {{
-            header, footer, nav, button, [data-testid="stSidebar"], 
-            [data-testid="stHeader"], .stTabs, .stButton, div.element-container:has(button),
-            div.element-container:has(input), div.element-container:has(select),
-            div.element-container:has(textarea), .stRadio,
-            .stExpander, .stAlert, h1, h2, h3, p {{ display: none !important; }}
-            @page {{ size: 76mm auto; margin: 0mm 2mm 0mm 2mm; }}
-            body {{ background-color: #ffffff !important; color: #000000 !important; margin: 0 !important; padding: 0 !important; }}
-            .secao-impressao-sumulas {{ display: block !important; width: 72mm !important; background-color: #ffffff !important; color: #000000 !important; }}
-            .cartao-sumula-print {{ background-color: #ffffff !important; color: #000000 !important; border-bottom: 2px dashed #000000 !important; padding: 5px 0px 25px 0px !important; page-break-inside: avoid !important; font-family: 'Courier New', Courier, Arial, sans-serif !important; width: 72mm !important; }}
-            .tabela-sumula-print {{ width: 100% !important; border-collapse: collapse !important; margin-top: 8px !important; }}
-            .tabela-sumula-print th, .tabela-sumula-print td {{ border: 1px solid #000000 !important; padding: 6px 3px !important; text-align: center !important; font-size: 10pt !important; }}
-            .texto-dupla-print {{ text-align: left !important; font-size: 9pt !important; font-weight: bold !important; word-break: break-all !important; }}
-        }}
-        .secao-impressao-sumulas {{ display: none; }}
-    </style>
-    """, unsafe_allow_html=True)
+st.markdown(f"""
+<style>
+    {estilos_css}
+    
+    /* Classes de Fallback para Garantir Renderização Visual do Telão no Streamlit */
+    .grade-telao-dinamica {{
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 15px;
+        padding: 10px;
+    }}
+    .mesa-container {{
+        background-color: #1e2622;
+        border: 1px solid #3d4f45;
+        border-radius: 8px;
+        padding: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }}
+    .mesa-header {{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #3d4f45;
+        padding-bottom: 6px;
+        margin-bottom: 8px;
+        font-weight: bold;
+        color: #ffbf00;
+    }}
+    .mesa-status-pendente {{
+        background-color: #8a6d00;
+        color: #ffffff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+    }}
+    .mesa-status-concluido {{
+        background-color: #1e5a34;
+        color: #ffffff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+    }}
+    .mesa-corpo {{
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }}
+    .jogador-linha {{
+        display: flex;
+        justify-content: space-between;
+        padding: 4px 6px;
+        border-radius: 4px;
+        background-color: #151b18;
+    }}
+    .vencedor-destaque {{
+        background-color: #244b33 !important;
+        border-left: 4px solid #28a745;
+        font-weight: bold;
+    }}
+    .jogador-nome {{
+        color: #e0e0e0;
+    }}
+    .jogador-resultado {{
+        color: #a3cfb6;
+    }}
 
-# =========================================================
+    @media print {{
+        header, footer, nav, button, [data-testid="stSidebar"], 
+        [data-testid="stHeader"], .stTabs, .stButton, div.element-container:has(button),
+        div.element-container:has(input), div.element-container:has(select),
+        div.element-container:has(textarea), .stRadio,
+        .stExpander, .stAlert, h1, h2, h3, p {{ display: none !important; }}
+        @page {{ size: 76mm auto; margin: 0mm 2mm 0mm 2mm; }}
+        body {{ background-color: #ffffff !important; color: #000000 !important; margin: 0 !important; padding: 0 !important; }}
+        .secao-impressao-sumulas {{ display: block !important; width: 72mm !important; background-color: #ffffff !important; color: #000000 !important; }}
+        .cartao-sumula-print {{ background-color: #ffffff !important; color: #000000 !important; border-bottom: 2px dashed #000000 !important; padding: 5px 0px 25px 0px !important; page-break-inside: avoid !important; font-family: 'Courier New', Courier, Arial, sans-serif !important; width: 72mm !important; }}
+        .tabela-sumula-print {{ width: 100% !important; border-collapse: collapse !important; margin-top: 8px !important; }}
+        .tabela-sumula-print th, .tabela-sumula-print td {{ border: 1px solid #000000 !important; padding: 6px 3px !important; text-align: center !important; font-size: 10pt !important; }}
+        .texto-dupla-print {{ text-align: left !important; font-size: 9pt !important; font-weight: bold !important; word-break: break-all !important; }}
+    }}
+    .secao-impressao-sumulas {{ display: none; }}
+</style>
+""", unsafe_allow_html=True)
+
 # 👑 PAINEL DE AUTENTICAÇÃO E ASSINATURA (SIDEBAR)
-# =========================================================
 st.sidebar.markdown(f"""
     <div class="dev-assinatura-container">
         <div class="dev-titulo">Engenharia de Software</div>
@@ -130,9 +192,10 @@ else:
 
 modo_telao = (st.session_state.perfil_usuario == "Telão")
 
-# =========================================================
-# FUNÇÕES INTERNAS DE RENDERIZAÇÃO E AUDIO
-# =========================================================
+
+# ==============================================================================
+# 🎛️ 2ª PARTE: FUNÇÕES INTERNAS DE RENDERIZAÇÃO E AUDIO
+# ==============================================================================
 def exibir_podio_arena(lista_classificada):
     if not lista_classificada: return
     
@@ -229,8 +292,9 @@ def renderizar_cronometro():
         </div>
     """, unsafe_allow_html=True)
 
+
 # ==============================================================================
-# 📺 RENDERIZAÇÃO: MODO TELÃO (ROTATIVO DINÂMICO)
+# 📺 3ª PARTE: RENDERIZAÇÃO: MODO TELÃO (ROTATIVO DINÂMICO)
 # ==============================================================================
 if modo_telao:
     titulo_torneio_show = dados.get('NomeTorneio', 'Torneio de Truco')
@@ -311,7 +375,7 @@ if modo_telao:
         st.rerun()
 
 # ==============================================================================
-# 🏢 RENDERIZAÇÃO: MODO INTERATIVO (PÚBLICO E OPERACIONAL)
+# 🏢 4ª PARTE: RENDERIZAÇÃO: MODO INTERATIVO (PÚBLICO E OPERACIONAL)
 # ==============================================================================
 else:
     st.markdown("<h1 style='text-align: center; color: #ffbf00 !important;'>🃏 Central de Torneios de Truco</h1>", unsafe_allow_html=True)
@@ -327,7 +391,7 @@ else:
         abas_lista.append("📝 Inscrição Online")
         
     if st.session_state.perfil_usuario == "Administrador":
-        # CORREÇÃO CRÍTICA: Lançar mesas só aparece se o torneio já saiu da fase de configuração
+        # Lançar mesas só aparece se o torneio já saiu da fase de configuração
         if dados['Status'] != 'Configuração' and len(dados.get('Rodadas', [])) > 0:
             abas_lista.append("⚔️ Lançar Mesas")
         abas_lista.append("⚙️ Painel de Controle Admin")
@@ -384,7 +448,10 @@ else:
                             st.rerun()
         aba_index += 1
 
-    # --- 3. ABA: LANÇAR MESAS (EXCLUSIVA ADMIN) ---
+
+# ==============================================================================
+# 🖨️ 5ª PARTE: ABA: LANÇAR MESAS & IMPRESSÃO TÉRMICA (EXCLUSIVA ADMIN)
+# ==============================================================================
     if "⚔️ Lançar Mesas" in abas_lista:
         with abas_criadas[aba_index]:
             renderizar_cronometro()
@@ -494,7 +561,10 @@ else:
                 st.info("Nenhuma rodada gerada até o momento.")
         aba_index += 1
 
-    # --- 4. ABA: PAINEL DE CONTROLE ADMIN (EXCLUSIVA ADMIN) ---
+
+# ==============================================================================
+# ⚙️ 6ª PARTE: PAINEL DE CONTROLE ADMIN & VIRADA DE RODADA DO SISTEMA SUÍÇO
+# ==============================================================================
     if "⚙️ Painel de Controle Admin" in abas_lista:
         with abas_criadas[aba_index]:
             st.markdown("<h2 style='color: #ffbf00 !important;'>⚙️ Painel do Diretor do Torneio</h2>", unsafe_allow_html=True)
@@ -566,6 +636,19 @@ else:
                     if len(dados.get('Jogadores', [])) < 2:
                         st.error("Erro Crítico: É obrigatório ter no mínimo 2 competidores para iniciar o chaveamento.")
                     else:
+                        # Inicialização analítica preventiva para o Motor Suíço
+                        for j in dados['Jogadores']:
+                            j['Pts'] = j.get('Pts', 0)
+                            j['Vit'] = j.get('Vit', 0)
+                            j['SaldoSets'] = j.get('SaldoSets', 0)
+                            j['SetsPró'] = j.get('SetsPró', 0)
+                            j['SaldoTent'] = j.get('SaldoTent', 0)
+                            j['TentPró'] = j.get('TentPró', 0)
+                            j['SaldoFlor'] = j.get('SaldoFlor', 0)
+                            j['FlorPró'] = j.get('FlorPró', 0)
+                            j['Bukes'] = j.get('Bukes', 0)
+                            j['Jogos'] = j.get('Jogos', 0)
+
                         dados['NomeTorneio'] = nome_torneio_input if nome_torneio_input else "Torneio de Truco"
                         dados['TempoLimiteMinutos'] = tempo_limite
                         dados['Status'] = 'Em Andamento'
@@ -576,7 +659,6 @@ else:
                             'FimRodada': False
                         }
                         
-                        # CORREÇÃO DA PRIMEIRA RODADA: Inicializa a lista antes e gera a rodada
                         dados['Rodadas'] = []
                         primeira_rodada = motor_truco.gerar_rodada_suica(dados, 1)
                         dados['Rodadas'].append(primeira_rodada)
@@ -595,7 +677,7 @@ else:
                                 dados['Jogadores'].pop(idx_j)
                                 gerenciador_dados.salvar_dados(dados)
                                 st.rerun()
-            
+                                
             elif dados['Status'] == 'Em Andamento':
                 st.info("🔒 **Inscrições Trancadas:** O torneio está ativo. O quadro de jogadores não pode receber alterações para não comprometer as somas do cálculo do Buchholz.")
                 st.markdown(f"### 🛡️ Cronômetro da Arena — Rodada {dados['RodadaAtual']}")
@@ -644,7 +726,7 @@ else:
                         gerenciador_dados.salvar_dados(dados)
                         st.rerun()
                 else:
-                    st.warning("🔒 Bloqueio de Próxima Fase: Há mesas pendentes nesta rodada que precisam ser preenchidas antes de avançar.")
+                    st.warning("🔒 Bloqueio de Próxima Fase: There are pending tables in this round that need to be filled before advancing.")
                     
             if st.button("🚨 PURGAR BANCO DE DADOS (Zerar Todo o Sistema)"):
                 gerenciador_dados.limpar_banco_dados()
