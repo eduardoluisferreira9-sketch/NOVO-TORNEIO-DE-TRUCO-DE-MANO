@@ -1,5 +1,5 @@
 /* ==========================================================================
-   🎨 ESTILIZAÇÃO COMPLETA: ARENA TRUCO PREMIUM (FELTRO CLARO & MADEIRA)
+   🎨 ESTILIZAÇÃO COMPLETA: ARENA TRUCO PREMIUM (MÁXIMO OURO & ZERO CINZA)
    ========================================================================== */
 
 /* 🌌 FUNDO ESCURO GRAFITE CONFORTÁVEL EM TODO O SISTEMA */
@@ -32,7 +32,7 @@
 
 .dev-titulo {
     font-size: 0.75rem !important;
-    color: #c2b4a6 !important;
+    color: #ffca28 !important; /* MUDOU: Era cinza, agora é ouro */
     text-transform: uppercase !important;
     letter-spacing: 2px !important;
     margin-bottom: 2px !important;
@@ -56,7 +56,6 @@
     display: grid !important;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
     gap: 15px !important;
-    margin-bottom: 25px !important;
     width: 100% !important;
 }
 
@@ -69,17 +68,17 @@
 }
 
 .podio-1 { border: 2px solid #ffca28 !important; background: linear-gradient(180px, rgba(255,202,40,0.1) 0%, #1a1f26 100%) !important; }
-.podio-2 { border: 2px solid #cccccc !important; background: linear-gradient(180px, rgba(204,204,204,0.1) 0%, #1a1f26 100%) !important; }
+.podio-2 { border: 2px solid #ffca28 !important; background: linear-gradient(180px, rgba(255,202,40,0.05) 0%, #1a1f26 100%) !important; } /* Moldura em Ouro */
 .podio-3 { border: 2px solid #cd7f32 !important; background: linear-gradient(180px, rgba(205,127,50,0.1) 0%, #1a1f26 100%) !important; }
 .podio-4 { border: 2px solid #5c4033 !important; }
 
 .podio-posicao { font-size: 1.3rem !important; font-weight: bold !important; margin-bottom: 5px !important; }
 .podio-1 .podio-posicao { color: #ffca28 !important; }
-.podio-2 .podio-posicao { color: #cccccc !important; }
+.podio-2 .podio-posicao { color: #ffd54f !important; } /* MUDOU: Prata virou Ouro Secundário */
 .podio-3 .podio-posicao { color: #cd7f32 !important; }
 .podio-4 .podio-posicao { color: #b58d75 !important; }
 
-.podio-nome { font-size: 1.15rem !important; font-weight: bold !important; color: #ffffff !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+.podio-nome { font-size: 1.15rem !important; font-weight: bold !important; color: #ffea00 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
 
 /* 🌸 CARD DO REI DA FLOR */
 .card-rei-flor {
@@ -93,7 +92,7 @@
 .rei-flor-titulo { color: #ff4da6 !important; font-weight: bold !important; font-size: 1.1rem !important; text-transform: uppercase !important; letter-spacing: 1px !important; }
 .rei-flor-nome { font-size: 1.3rem !important; font-weight: bold !important; color: #ffffff !important; margin-top: 5px !important; }
 
-/* 📺 CARDS DAS MESAS - VERDE FELTRO CLARO E VIVO */
+/* 📺 CARDS DAS MESAS - VERDE FELTRO MESA NOVA */
 .grade-telao-dinamica {
     display: grid !important;
     grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)) !important;
@@ -102,9 +101,9 @@
 }
 
 .mesa-container {
-    background: linear-gradient(135px, #008f39 0%, #00732f 100%) !important; /* 🟢 CLAREADO EM 2 TONS: Feltro aberto e nítido */
-    border: 3px solid #5c4033 !important; /* Moldura de Madeira Marrom */
-    border-top: 6px solid #8b5a2b !important; /* Moldura Superior Acabamento */
+    background: linear-gradient(135px, #008f39 0%, #00732f 100%) !important; 
+    border: 3px solid #5c4033 !important; 
+    border-top: 6px solid #8b5a2b !important; 
     border-radius: 12px !important;
     padding: 15px !important;
     margin-bottom: 15px !important;
@@ -117,7 +116,7 @@
     align-items: center !important;
     font-weight: 900 !important;
     font-size: 1.4rem !important;
-    color: #ffffff !important; /* Título da mesa em Branco Puro para não brigar com o feltro claro */
+    color: #ffffff !important; 
     border-bottom: 2px solid rgba(255, 255, 255, 0.3) !important; 
     padding-bottom: 6px !important;
     margin-bottom: 12px !important;
@@ -125,13 +124,13 @@
 }
 
 .mesa-status-pendente {
-    color: #ffffff !important;
-    background-color: rgba(0, 0, 0, 0.5) !important;
+    color: #000000 !important; /* Texto preto para legibilidade total na caixinha amarela */
+    background-color: #ffca28 !important; 
     padding: 3px 10px !important;
     border-radius: 6px !important;
     font-size: 0.85rem !important;
     font-weight: bold !important;
-    border: 1px solid #ffca28 !important;
+    border: 1px solid #ffffff !important;
 }
 
 .mesa-status-concluido {
@@ -144,7 +143,7 @@
     border: 1px solid #ffff00 !important;
 }
 
-/* LINHA DOS JOGADORES - TEXTO COM MÁXIMA RESOLUÇÃO E CONTRASTE */
+/* LINHA DOS JOGADORES - TOTALMENTE TRABALHADA NO DOURADO/AMARELO */
 .jogador-linha {
     display: flex !important;
     justify-content: space-between !important;
@@ -153,35 +152,37 @@
     margin-bottom: 6px !important;
     font-size: 1.3rem !important; 
     border-radius: 6px !important;
-    background-color: rgba(0, 41, 17, 0.4) !important; /* Fundo interno um pouco mais translúcido */
+    background-color: rgba(0, 41, 17, 0.5) !important; 
     border: 1px solid rgba(255, 255, 255, 0.15) !important;
 }
 
 .jogador-nome { 
-    color: #fff647 !important; /* 🟡 AMARELO LIMÃO VIVO: Destaca perfeitamente no feltro claro */
+    color: #fff647 !important; /* Amarelo Limão Vivo */
     font-weight: 800 !important; 
-    text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.9); /* Sombra pesada preta para criar o contraste perfeito */
+    text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.9); 
 }
 
+/* TEXTO DO PLACAR DA MESA (AQUELE QUE ESTAVA CINZA E PEQUENO) */
 .jogador-resultado { 
-    color: #ffff00 !important; 
+    color: #ffff00 !important; /* MUDOU: Agora brilha em amarelo ouro */
     font-family: 'Courier New', monospace !important; 
     font-weight: bold !important; 
     background-color: #000000 !important; 
     padding: 4px 12px !important; 
     border-radius: 4px !important; 
-    border: 1px solid #fff647 !important;
+    border: 1px solid #ffca28 !important; /* Borda dourada em volta do placar */
     font-size: 1.2rem !important;
+    text-shadow: none !important;
 }
 
-/* 👑 DESTAQUE TOTAL DA DUPLA VENCEDORA */
+/* 👑 DESTAQUE DE VITÓRIA */
 .vencedor-destaque { 
-    background-color: #ffff00 !important; /* Transforma o fundo da linha em ouro líquido */
+    background-color: #ffff00 !important; 
     border: 1px solid #ffffff !important;
     box-shadow: 0 0 15px rgba(255, 255, 0, 0.7) !important;
 }
 .vencedor-destaque .jogador-nome { 
-    color: #000000 !important; /* Texto preto para legibilidade absoluta */
+    color: #000000 !important; 
     text-shadow: none !important;
 }
 .vencedor-destaque .jogador-resultado {
@@ -193,7 +194,7 @@
 /* 🏆 CARD HISTÓRICO GALERIA */
 .galeria-card {
     background: #1a1f26 !important;
-    border: 1px solid #30363d !important;
+    border: 1px solid #ffca28 !important;
     border-left: 5px solid #ffca28 !important;
     border-radius: 8px !important;
     padding: 20px !important;
@@ -202,12 +203,24 @@
 }
 .galeria-header { display: flex; justify-content: space-between; border-bottom: 1px solid #30363d; padding-bottom: 6px; margin-bottom: 10px; }
 .galeria-titulo-evento { font-size: 1.2rem; font-weight: bold; color: #ffca28; }
-.galeria-data { color: #8b949e; font-size: 0.9rem; }
+.galeria-data { color: #ffd54f !important; font-size: 0.9rem; } /* MUDOU: Data em dourado suave */
 .galeria-linha-campeao { font-size: 1.15rem; font-weight: bold; color: #ffffff; }
 .galeria-ouro { color: #ffca28; }
-.galeria-linha-secundaria { color: #c9d1d9; font-size: 1rem; margin-top: 2px; }
+.galeria-linha-secundaria { color: #ffd54f !important; font-size: 1rem; margin-top: 2px; } /* MUDOU: Vice-campeão em ouro */
 
-/* ✍️ TEXTOS GERAIS DO STREMLIT SE ADAPTANDO À PALETA DOURADA */
-.stDataFrame, .stTable, label, p {
-    color: #ffca28 !important;
+/* ✍️ BANIMENTO DO CINZA NOS COMPONENTES NATIVOS DO STREMLIT */
+/* Isso altera os botões de "Lançar Placar", labels, textos secundários e expanders */
+.stDataFrame, .stTable, label, p, span, .stMarkdown {
+    color: #ffca28 !important; /* Força tudo para Dourado Real */
+}
+
+/* Altera as escritas pequenas dos botões expansores de Lançamento de Placar */
+.stContentBlock, text, .stExpander p, summary span {
+    color: #ffea00 !important; /* Amarelo Intenso */
+    font-weight: bold !important;
+}
+
+/* Remove o cinza dos ícones de setas e pequenos detalhes */
+svg {
+    fill: #ffca28 !important;
 }
