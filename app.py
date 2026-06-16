@@ -259,23 +259,23 @@ if modo_telao:
                 vencedor_j2 = "vencedor-destaque" if (m['Status'] == 'Concluído' and int(m['SetsJ2']) > int(m['SetsJ1'])) else ""
                 
                 html_grade += f"""
-                    <div class="mesa-container">
-                        <div class="mesa-header">
-                            <span>🎴 Mesa {m['Mesa']}</span>
-                            <span class="{status_classe}">{status_txt}</span>
+                <div class="mesa-container">
+                    <div class="mesa-header">
+                        <span>🚨 Mesa {m['Mesa']}</span>
+                        <span class="{status_classe}">{status_txt}</span>
+                    </div>
+                    <div class="mesa-corpo">
+                        <div class="jogador-linha {vencedor_j1}">
+                            <span class="jogador-nome">👤 {m['Jogador1']}</span>
+                            <span class="jogador-resultado">{m['SetsJ1']}S ({m['TentosJ1']}T)</span>
                         </div>
-                        <div class="mesa-corpo">
-                            <div class="jogador-linha {vencedor_j1}">
-                                <span class="jogador-nome">👤 {m['Jogador1']}</span>
-                                <span class="jogador-resultado">{m['SetsJ1']}S ({m['TentosJ1']}T)</span>
-                            </div>
-                            <div class="jogador-linha {vencedor_j2}">
-        <span class="jogador-nome">👤 {m['Jogador2']}</span>
-        <span class="jogador-resultado">{m['SetsJ2']}S ({m['TentosJ2']}T)</span>
-                            </div>
+                        <div class="jogador-linha {vencedor_j2}">
+                            <span class="jogador-nome">👤 {m['Jogador2']}</span>
+                            <span class="jogador-resultado">{m['SetsJ2']}S ({m['TentosJ2']}T)</span>
                         </div>
                     </div>
-        """
+                </div>
+            """
         html_grade += "</div>"         
         st.markdown(html_grade, unsafe_allow_html=True)
         else:
