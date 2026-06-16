@@ -381,7 +381,10 @@ else:
         with aba2:
             renderizar_cronometro()
             rodada_atual_num = dados['RodadaAtual']
-            rodada_atual = next((r for r in dados['Rodadas'] if r['Numero'] == rodada_atual_num), None)
+            
+            # 🚨 BLINDAGEM CONTRA KEYERROR AQUI:
+            rodadas_lista = dados.get('Rodadas', [])
+            rodada_atual = next((r for r in rodadas_lista if r['Numero'] == rodada_atual_num), None)
             
             if rodada_atual:
                 col_tit, col_imp = st.columns([3, 1])
@@ -445,7 +448,7 @@ else:
                         
                         if m['Jogador1'] == "CHAPÉU" or m['Jogador2'] == "CHAPÉU": continue
                             
-                        with st.expander(f"📝 Lançar Placar - Mesa {m['Mesa']}"):
+                        with st.expandable(f"📝 Lançar Placar - Mesa {m['Mesa']}") if hasattr(st, "expandable") else st.expander(f"📝 Lançar Placar - Mesa {m['Mesa']}"):
                             form_key = f"form_mesa_{m['Mesa']}_{rodada_atual_num}"
                             opcoes_sets = ["Aguardando...", f"{m['Jogador1']} 2 x 0", f"{m['Jogador2']} 2 x 0", f"{m['Jogador1']} 2 x 1", f"{m['Jogador2']} 2 x 1"]
                             escolha_set = st.selectbox("Qual o placar em Sets?", opcoes_sets, key=f"sel_{form_key}")
@@ -462,6 +465,7 @@ else:
                             
                             if st.button("Confirmar e Salvar Mesa", key=f"btn_{form_key}"):
                                 if escolha_set != "Aguardando...":
+                                    # 🚨 ACESSO PROTEGIDO À MESA:
                                     alvo = dados['Rodadas'][dados['RodadaAtual'] - 1]['Mesas'][idx]
                                     alvo['Status'] = 'Concluído'
                                     alvo['FloresJ1'] = f1_num
@@ -474,181 +478,4 @@ else:
                                         if "2 x 0" in escolha_set: alvo['TentosJ1'], alvo['TentosJ2'] = 72, 0
                                         else: alvo['TentosJ1'], alvo['TentosJ2'] = t1_int, t2_int
                                     else:
-                                        alvo['SetsJ1'], alvo['SetsJ2'] = (1 if "2 x 1" in escolha_set else 0), 2
-                                        if "2 x 0" in escolha_set: alvo['TentosJ1'], alvo['TentosJ2'] = 0, 72
-                                        else: alvo['TentosJ1'], alvo['TentosJ2'] = t1_int, t2_int
-                                            
-                                    gerenciador_dados.salvar_dados(dados)
-                                    st.success("Placar salvo com sucesso!")
-                                    st.rerun()
-
-    # --- ABA 3: PAINEL DE CONTROLE ---
-    with aba3:
-        st.markdown("<h2 style='color: #ffbf00 !important;'>⚙️ Painel de Controle Estratégico</h2>", unsafe_allow_html=True)
-        autenticado = False
-        senha_inserida = st.text_input("Insira a chave mestra de administrador:", type="password")
-        if senha_inserida == gerenciador_dados.CHAVE_ADMINISTRADOR:
-            autenticado = True
-            st.success("Acesso liberado.")
-        elif senha_inserida != "": st.error("Chave incorreta.")
-            
-        if autenticado:
-            if dados['Status'] == 'Configuração':
-                st.markdown("### 🛠️ Configurações Iniciais do Torneio")
-                nome_torneio_input = st.text_input("Nome Oficial do Torneio:", value=dados.get('NomeTorneio', ''))
-                tempo_minutos_input = st.number_input("Tempo de Duração de cada Rodada (Minutos):", min_value=5, max_value=180, value=int(dados.get('TempoLimiteMinutos', 45)), step=5)
-                
-                jogadores_salvos = dados.get('Jogadores', [])
-                df_inicial = pd.DataFrame(jogadores_salvos) if jogadores_salvos else pd.DataFrame(columns=['Nome', 'Entidade'])
-                
-                df_editado = st.data_editor(
-                    df_inicial, column_config={
-                        "Nome": st.column_config.TextColumn("Nome do Atleta / Dupla", width="large", required=True),
-                        "Entidade": st.column_config.TextColumn("Entidade / Equipe / Clube", width="large", default="SEM ENTIDADE")
-                    }, num_rows="dynamic", use_container_width=True, key="editor_inscritos"
-                )
-                
-                col_b1, col_b2 = st.columns(2)
-                with col_b1:
-                    if st.button("💾 Salvar Revisão da Lista"):
-                        lista_limpa = []
-                        for _, row in df_editado.dropna(subset=['Nome']).iterrows():
-                            lista_limpa.append({'Nome': str(row['Nome']).strip().upper(), 'Entidade': str(row['Entidade']).strip().upper() if pd.notna(row['Entidade']) else "SEM ENTIDADE"})
-                        dados['NomeTorneio'] = nome_torneio_input if nome_torneio_input else "Torneio de Truco"
-                        dados['TempoLimiteMinutos'] = tempo_minutos_input
-                        dados['Cronometro']['TempoRestanteSegundos'] = tempo_minutos_input * 60
-                        dados['Jogadores'] = lista_limpa
-                        gerenciador_dados.salvar_dados(dados)
-                        st.success("Configurações salvas e arquivadas!")
-                        st.rerun()
-                with col_b2:
-                    if st.button("🚀 FECHAR INSCRIÇÕES E GERAR 1ª RODADA"):
-                        lista_limpa = []
-                        for _, row in df_editado.dropna(subset=['Nome']).iterrows():
-                            lista_limpa.append({'Nome': str(row['Nome']).strip().upper(), 'Entidade': str(row['Entidade']).strip().upper() if pd.notna(row['Entidade']) else "SEM ENTIDADE"})
-                        if len(lista_limpa) < 2: st.error("Mínimo de 2 competidores.")
-                        else:
-                            dados['NomeTorneio'] = nome_torneio_input if nome_torneio_input else "Torneio de Truco"
-                            dados['TempoLimiteMinutos'] = tempo_minutos_input
-                            dados['Cronometro']['TempoRestanteSegundos'] = tempo_minutos_input * 60
-                            dados['Cronometro']['Ativo'] = False
-                            dados['Cronometro']['FimRodada'] = False
-                            dados['Jogadores'] = lista_limpa
-                            dados['Status'] = 'Em Andamento'
-                            dados['RodadaAtual'] = 0
-                            dados['Rodadas'] = []
-                            motor_truco.gerar_proxima_rodada(dados)
-                            st.rerun()
-                        
-            elif dados['Status'] == 'Em Andamento':
-                st.markdown(f"### 🛡️ Gestão da {dados['RodadaAtual']}ª Rodada")
-                novo_tempo_manual = st.number_input("Ajustar minutos da rodada agora:", min_value=1, max_value=180, value=int(dados['TempoLimiteMinutos']))
-                if st.button("🔄 Aplicar Novo Tempo Manual"):
-                    dados['TempoLimiteMinutos'] = novo_tempo_manual
-                    dados['Cronometro']['TempoRestanteSegundos'] = novo_tempo_manual * 60
-                    dados['Cronometro']['FimRodada'] = False
-                    gerenciador_dados.salvar_dados(dados)
-                    st.success("Tempo reajustado!")
-                    st.rerun()
-                    
-                col_c1, col_c2, col_c3 = st.columns(3)
-                with col_c1:
-                    if st.button("▶️ Iniciar / Retomar Tempo", use_container_width=True):
-                        dados['Cronometro']['Ativo'] = True
-                        gerenciador_dados.salvar_dados(dados)
-                        st.rerun()
-                with col_c2:
-                    if st.button("⏸️ Pausar Tempo", use_container_width=True):
-                        dados['Cronometro']['Ativo'] = False
-                        gerenciador_dados.salvar_dados(dados)
-                        st.rerun()
-                with col_c3:
-                    if st.button("🔄 Resetar Tempo", use_container_width=True):
-                        dados['Cronometro']['TempoRestanteSegundos'] = dados['TempoLimiteMinutos'] * 60
-                        dados['Cronometro']['Ativo'] = False
-                        dados['Cronometro']['FimRodada'] = False
-                        gerenciador_dados.salvar_dados(dados)
-                        st.rerun()
-                
-                st.markdown("---")
-                rodada_atual_obj = dados['Rodadas'][dados['RodadaAtual'] - 1]
-                todas_concluidas = all(m['Status'] == 'Concluído' for m in rodada_atual_obj['Mesas'])
-                
-                if todas_concluidas:
-                    st.success("✅ Todas as mesas concluídas.")
-                    if st.button("⏭️ Sortear e Gerar Próxima Rodada"):
-                        dados['Cronometro']['TempoRestanteSegundos'] = dados['TempoLimiteMinutos'] * 60
-                        dados['Cronometro']['Ativo'] = False
-                        dados['Cronometro']['FimRodada'] = False
-                        motor_truco.gerar_proxima_rodada(dados)
-                        st.rerun()
-                else: st.warning("⚠️ Existem mesas pendentes.")
-                    
-                st.markdown("---")
-                st.markdown("### 🏆 Encerramento de Torneio")
-                if st.button("🏁 Encerrar Torneio e Salvar Histórico"):
-                    dados['Status'] = 'Encerrado'
-                    gerenciador_dados.salvar_dados(dados)
-                    classif_final = motor_truco.processar_classificacao(dados)
-                    rei_flor, maior_flor = "N/A", -1
-                    for j_f in classif_final:
-                        if j_f['FlorPró'] > maior_flor:
-                            maior_flor = j_f['FlorPró']
-                            rei_flor = j_f['Nome']
-                    
-                    novo_registro = {
-                        'Torneio': dados['NomeTorneio'], 'Data': datetime.now().strftime("%d/%m/%Y"),
-                        'Campeao': classif_final[0]['Nome'] if len(classif_final) > 0 else "N/A",
-                        'Vice': classif_final[1]['Nome'] if len(classif_final) > 1 else "N/A",
-                        'Terceiro': classif_final[2]['Nome'] if len(classif_final) > 2 else "N/A",
-                        'Quarto': classif_final[3]['Nome'] if len(classif_final) > 3 else "N/A",
-                        'ReiDaFlor': f"{rei_flor} ({maior_flor} Flores)" if maior_flor > 0 else "N/A"
-                    }
-                    galeria = gerenciador_dados.carregar_galeria()
-                    galeria.insert(0, novo_registro)
-                    gerenciador_dados.salvar_galeria(galeria)
-                    st.rerun()
-
-            elif dados['Status'] == 'Encerrado':
-                st.markdown("### 🏆 Torneio Finalizado")
-                classif_final = motor_truco.processar_classificacao(dados)
-                st.balloons()
-                
-                # Exibe o pódio triunfal de encerramento
-                exibir_podio_arena(classif_final)
-                
-                if st.button("🔄 Reiniciar Sistema para Novo Torneio"):
-                    if os.path.exists(gerenciador_dados.ARQUIVO_BACKUP): os.remove(gerenciador_dados.ARQUIVO_BACKUP)
-                    st.session_state.dados = {
-                        'NomeTorneio': '', 'Status': 'Configuração', 'Jogadores': [], 'RodadaAtual': 0, 'Rodadas': [],
-                        'TempoLimiteMinutos': 45, 'Cronometro': {'TempoRestanteSegundos': 2700, 'Ativo': False, 'FimRodada': False}
-                    }
-                    st.rerun()
-
-    # --- ABA 4: HISTÓRICO DE CAMPEÕES ---
-    with aba4:
-        st.markdown("<h2 style='color: #ffbf00 !important;'>🏆 Galeria de Campeões Imortais</h2>", unsafe_allow_html=True)
-        historico_galeria = gerenciador_dados.carregar_galeria()
-        if historico_galeria:
-            for registro in historico_galeria:
-                st.markdown(f"""
-                    <div class="galeria-card">
-                        <div class="galeria-header">
-                            <span class="galeria-titulo-evento">🏆 {registro.get('Torneio', 'Torneio sem Nome')}</span>
-                            <span class="galeria-data">📅 Data: {registro.get('Data', 'N/A')}</span>
-                        </div>
-                        <div class="galeria-corpo">
-                            <div class="galeria-linha-campeao">🥇 1º Lugar (Campeão): <span class="galeria-ouro">{registro.get('Campeao', 'N/A')}</span></div>
-                            <div class="galeria-linha-secundaria">🥈 2º Lugar (Vice): {registro.get('Vice', 'N/A')}</div>
-                            <div class="galeria-linha-secundaria">🥉 3º Lugar: {registro.get('Terceiro', 'N/A')} &nbsp;|&nbsp; 🏅 4º Lugar: {registro.get('Quarto', 'N/A')}</div>
-                            <div class="galeria-linha-secundaria" style="margin-top: 5px; color: #ff4da6 !important;\">🌸 Rei da Flor: {registro.get('ReiDaFlor', 'N/A')}</div>
-                        </div>
-                    </div>
-                """, unsafe_allow_html=True)
-        else: st.info("Nenhum torneio registrado em histórico físico ainda.")
-
-    # Rodada Operacional de Rodapé (Crédito de Engenharia)
-    st.markdown(f"""
-        <hr style='border-color: #222;'>
-        <p style='text-align: center; color: #555; font-size: 0.85rem;'>Sistema de Engenharia de Torneios de Alta Performance • Desenvolvido e Licenciado por {gerenciador_dados.NOME_CRIADOR}</p>
-    """, unsafe_allow_html=True)
+                                        alvo['SetsJ1'], alvo
