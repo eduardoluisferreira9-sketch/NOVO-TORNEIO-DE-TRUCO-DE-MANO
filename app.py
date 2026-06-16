@@ -180,22 +180,22 @@ def obter_tempo_restante_dinamico():
         return restante, c_dados
     return c_dados['TempoRestanteSegundos'], c_dados
 
-def injetar_cronometro_javascript():
+def injetar_cronometro_javascript(key_prefix="default"):
     """ Injeta o motor em JavaScript rodando no navegador cliente independente do Python """
     segundos_totais, c_dados = obter_tempo_restante_dinamico()
     ativo_js = "true" if c_dados['Ativo'] else "false"
     
     html_cronometro = f"""
-    <div id="js-cronometro-box" style="background-color: #121815; border: 2px solid #28a745; border-radius: 10px; padding: 4px; text-align: center; margin-bottom: 4px; box-shadow: 0 0 12px rgba(0,0,0,0.5);">
-        <span id="js-cronometro-texto" style="font-size: 2.6rem; font-family: 'Courier New', monospace; font-weight: bold; color: #28a745; line-height: 1.1;">--:--</span>
+    <div id="{key_prefix}-js-cronometro-box" style="background-color: #121815; border: 2px solid #28a745; border-radius: 10px; padding: 4px; text-align: center; margin-bottom: 4px; box-shadow: 0 0 12px rgba(0,0,0,0.5);">
+        <span id="{key_prefix}-js-cronometro-texto" style="font-size: 2.6rem; font-family: 'Courier New', monospace; font-weight: bold; color: #28a745; line-height: 1.1;">--:--</span>
     </div>
 
     <script>
         (function() {{
             var segundosRestantes = {segundos_totais};
             var ativo = {ativo_js};
-            var elementoBox = document.getElementById('js-cronometro-box');
-            var elementoTexto = document.getElementById('js-cronometro-texto');
+            var elementoBox = document.getElementById('{key_prefix}-js-cronometro-box');
+            var elementoTexto = document.getElementById('{key_prefix}-js-cronometro-texto');
             
             function atualizarDisplay() {{
                 if (segundosRestantes <= 0) {{
@@ -208,7 +208,7 @@ def injetar_cronometro_javascript():
                 var minutos = Math.floor(segundosRestantes / 60);
                 var segundos = segundosRestantes % 60;
                 
-                var strMin = minutos < 10 ? "0" + minutos : minutos;
+                var strMin = minutos < 10 ? "0" + minutes : minutes;
                 var strSeg = segundos < 10 ? "0" + segundos : segundos;
                 
                 if (segundosRestantes < 300) {{
@@ -267,7 +267,7 @@ if modo_telao:
     """, unsafe_allow_html=True)
     
     if dados['Status'] == 'Em Andamento':
-        injetar_cronometro_javascript()
+        injetar_cronometro_javascript(key_prefix="telao")
         
     if st.session_state.tela_telao == "jogos":
         if 'RodadaAtual' in dados and 'Rodadas' in dados and len(dados['Rodadas']) > 0:
@@ -433,7 +433,7 @@ else:
 # ==============================================================================
     if "⚔️ Lançar Mesas" in abas_lista:
         with abas_criadas[aba_index]:
-            injetar_cronometro_javascript()
+            injetar_cronometro_javascript(key_prefix="lancador")
             rodada_atual_num = dados['RodadaAtual']
             rodadas_lista = dados.get('Rodadas', [])
             rodada_atual = next((r for r in rodadas_lista if r['Numero'] == rodada_atual_num), None)
@@ -648,6 +648,9 @@ else:
             elif dados['Status'] == 'Em Andamento':
                 st.info("🔒 **Inscrições Trancadas:** O torneio está ativo.")
                 st.markdown(f"### 🛡️ Cronômetro da Arena — Rodada {dados['RodadaAtual']}")
+                
+                # INJEÇÃO DO CRONÔMETRO JAVASCRIPT ISOLADO NO PAINEL DO ADMIN CONTRA RESETS Visuals
+                injetar_cronometro_javascript(key_prefix="admin")
                 
                 restante_real, c_dados = obter_tempo_restante_dinamico()
                 c_ativo = c_dados.get('Ativo', False)
