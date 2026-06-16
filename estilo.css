@@ -1,6 +1,11 @@
 /* ==========================================================================
-   🎨 ESTILIZAÇÃO COMPLETA: CENTRAL DE TORNEIOS DE TRUCO (VERSÃO ARENA VERDE PRO)
+   🎨 ESTILIZAÇÃO ARENA DARK TOTAL: CENTRAL DE TORNEIOS DE TRUCO 
    ========================================================================== */
+
+/* 🌌 FORÇAR FUNDO ESCURO EM TODO O SISTEMA STREMLIT */
+.stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+    background-color: #0d1117 !important;
+}
 
 /* Prevenção de rolagem no modo telão */
 .modo-telao-ativo, .modo-telao-ativo body {
@@ -15,95 +20,88 @@
 
 /* 📋 ASSINATURA PROFISSIONAL DO DESENVOLVEDOR (EDUARDO LUIS FERREIRA) */
 .dev-assinatura-container {
-    background: linear-gradient(135px, #0b1a10 0%, #050d08 100%);
-    border: 1px solid #1c3d27;
-    border-left: 4px solid #ffbf00;
-    border-radius: 8px;
-    padding: 15px;
-    margin-top: 10px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    background: linear-gradient(135px, #070f0a 0%, #020503 100%) !important;
+    border: 1px solid #142c1b !important;
+    border-left: 4px solid #ffbf00 !important;
+    border-radius: 8px !important;
+    padding: 15px !important;
+    margin-top: 10px !important;
+    margin-bottom: 20px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.6) !important;
 }
 
 .dev-titulo {
-    font-size: 0.75rem;
-    color: #a3b899;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    margin-bottom: 2px;
+    font-size: 0.75rem !important;
+    color: #8fa89b !important;
+    text-transform: uppercase !important;
+    letter-spacing: 2px !important;
+    margin-bottom: 2px !important;
 }
 
 .dev-nome {
-    font-size: 1.1rem;
-    font-weight: bold;
-    color: #ffffff;
-    text-shadow: 0 0 8px rgba(255,191,0,0.3);
+    font-size: 1.1rem !important;
+    font-weight: bold !important;
+    color: #ffffff !important;
+    text-shadow: 0 0 8px rgba(255,191,0,0.4) !important;
 }
 
 .dev-tag {
-    font-size: 0.8rem;
-    color: #ffbf00;
-    font-weight: 500;
+    font-size: 0.8rem !important;
+    color: #ffbf00 !important;
+    font-weight: 500 !important;
 }
 
-/* 🏆 PODIO PREMIUM DOS 4 FINALISTAS */
+/* 🏆 PÓDIO PREMIUM DOS 4 FINALISTAS */
 .podio-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 15px;
-    margin-bottom: 25px;
-    width: 100%;
-}
-
-.podio-card {
-    background: #0f1f15;
-    border-radius: 8px;
-    padding: 15px;
-    text-align: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-}
-
-.podio-1 { border: 2px solid #ffbf00; background: linear-gradient(180px, rgba(255,191,0,0.08) 0%, #0f1f15 100%); }
-.podio-2 { border: 2px solid #cccccc; background: linear-gradient(180px, rgba(204,204,204,0.08) 0%, #0f1f15 100%); }
-.podio-3 { border: 2px solid #cd7f32; background: linear-gradient(180px, rgba(205,127,50,0.08) 0%, #0f1f15 100%); }
-.podio-4 { border: 2px solid #2d5a3e; }
-
-.podio-posicao { font-size: 1.3rem; font-weight: bold; margin-bottom: 5px; }
-.podio-1 .podio-posicao { color: #ffbf00; }
-.podio-2 .podio-posicao { color: #cccccc; }
-.podio-3 .podio-posicao { color: #cd7f32; }
-.podio-4 .podio-posicao { color: #a3cfb6; }
-
-.podio-nome { font-size: 1.15rem; font-weight: bold; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-/* 🌸 CARD DO REI DA FLOR */
-.card-rei-flor {
-    background: linear-gradient(135px, #2b0c1e 0%, #14030d 100%);
-    border: 2px solid #ff4da6;
-    border-radius: 8px;
-    padding: 15px;
-    text-align: center;
-    box-shadow: 0 4px 12px rgba(255, 77, 166, 0.2);
-}
-.rei-flor-titulo { color: #ff4da6; font-weight: bold; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; }
-.rei-flor-nome { font-size: 1.3rem; font-weight: bold; color: #ffffff; margin-top: 5px; }
-
-/* 📺 GRADE DE MESAS - VERDE ARENA DE ALTO CONTRASTE */
-.grade-telao-dinamica {
     display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)) !important;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
     gap: 15px !important;
+    margin-bottom: 25px !important;
     width: 100% !important;
 }
 
+.podio-card {
+    background: #161b22 !important;
+    border-radius: 8px !important;
+    padding: 15px !important;
+    text-align: center !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5) !important;
+}
+
+.podio-1 { border: 2px solid #ffbf00 !important; background: linear-gradient(180px, rgba(255,191,0,0.1) 0%, #161b22 100%) !important; }
+.podio-2 { border: 2px solid #cccccc !important; background: linear-gradient(180px, rgba(204,204,204,0.1) 0%, #161b22 100%) !important; }
+.podio-3 { border: 2px solid #cd7f32 !important; background: linear-gradient(180px, rgba(205,127,50,0.1) 0%, #161b22 100%) !important; }
+.podio-4 { border: 2px solid #234e32 !important; }
+
+.podio-posicao { font-size: 1.3rem !important; font-weight: bold !important; margin-bottom: 5px !important; }
+.podio-1 .podio-posicao { color: #ffbf00 !important; }
+.podio-2 .podio-posicao { color: #cccccc !important; }
+.podio-3 .podio-posicao { color: #cd7f32 !important; }
+.podio-4 .podio-posicao { color: #52b774 !important; }
+
+.podio-nome { font-size: 1.15rem !important; font-weight: bold !important; color: #ffffff !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+
+/* 🌸 CARD DO REI DA FLOR */
+.card-rei-flor {
+    background: linear-gradient(135px, #2d0922 0%, #14020e 100%) !important;
+    border: 2px solid #ff4da6 !important;
+    border-radius: 8px !important;
+    padding: 15px !important;
+    text-align: center !important;
+    box-shadow: 0 4px 12px rgba(255, 77, 166, 0.4) !important;
+}
+.rei-flor-titulo { color: #ff4da6 !important; font-weight: bold !important; font-size: 1.1rem !important; text-transform: uppercase !important; letter-spacing: 1px !important; }
+.rei-flor-nome { font-size: 1.3rem !important; font-weight: bold !important; color: #ffffff !important; margin-top: 5px !important; }
+
+/* 📺 CARDS DAS MESAS - VERDE TRUCO DE ALTO CONTRASTE CONTRA FUNDO ESCURO */
 .mesa-container {
-    background: linear-gradient(135px, #112216 0%, #0b140e 100%) !important;
-    border: 2px solid #22442c !important;
-    border-top: 5px solid #2da750 !important;
+    background: linear-gradient(135px, #0f2d19 0%, #07190e 100%) !important; /* Verde escuro fechado e imponente */
+    border: 2px solid #1b4d2c !important;
+    border-top: 5px solid #2ea44f !important;
     border-radius: 10px !important;
     padding: 15px !important;
     margin-bottom: 15px !important;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7) !important;
 }
 
 .mesa-header {
@@ -111,89 +109,90 @@
     justify-content: space-between !important;
     align-items: center !important;
     font-weight: bold !important;
-    font-size: 1.25rem !important;
-    color: #ffffff !important;
-    border-bottom: 2px solid #1c3724 !important;
+    font-size: 1.3rem !important;
+    color: #ffffff !important; /* Título da mesa BRANCO ABSOLUTO */
+    border-bottom: 2px solid #143d22 !important;
     padding-bottom: 6px !important;
     margin-bottom: 12px !important;
 }
 
 .mesa-status-pendente {
     color: #ffaa00 !important;
-    background-color: rgba(255, 170, 0, 0.15) !important;
+    background-color: rgba(255, 170, 0, 0.2) !important;
     padding: 3px 10px !important;
     border-radius: 6px !important;
-    font-size: 0.8rem !important;
+    font-size: 0.85rem !important;
     font-weight: bold !important;
-    border: 1px solid rgba(255, 170, 0, 0.4) !important;
+    border: 1px solid #ffaa00 !important;
 }
 
 .mesa-status-concluido {
-    color: #2da750 !important;
-    background-color: rgba(45, 167, 80, 0.15) !important;
+    color: #39e66d !important;
+    background-color: rgba(57, 230, 109, 0.15) !important;
     padding: 3px 10px !important;
     border-radius: 6px !important;
-    font-size: 0.8rem !important;
+    font-size: 0.85rem !important;
     font-weight: bold !important;
-    border: 1px solid rgba(45, 167, 80, 0.4) !important;
+    border: 1px solid #39e66d !important;
 }
 
+/* LINHA DOS JOGADORES (FIM DO CINZA APAGADO) */
 .jogador-linha {
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
     padding: 10px 12px !important;
     margin-bottom: 6px !important;
-    font-size: 1.15rem !important;
+    font-size: 1.2rem !important; /* Fonte ligeiramente maior para leitura rápida */
     border-radius: 6px !important;
-    background-color: #162c1d !important; /* Fundo interno escuro para destacar o texto branco */
-    border: 1px solid #1f3f29 !important;
+    background-color: #0b2213 !important; /* Fundo interno da linha bem definido */
+    border: 1px solid #14381f !important;
 }
 
 .jogador-nome { 
-    color: #ffffff !important; /* BRANCO PURO: Leitura perfeita sobre o verde */
-    font-weight: bold !important; 
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    color: #ffffff !important; /* ⚪ FORÇADO PARA BRANCO BRILHANTE */
+    font-weight: 800 !important; /* Super negrito */
 }
 
 .jogador-resultado { 
-    color: #ffbf00 !important; /* Destaque em ouro para os pontos */
+    color: #ffbf00 !important; /* 🟡 PLACAR EM OURO INTENSO */
     font-family: 'Courier New', monospace !important; 
     font-weight: bold !important; 
-    background-color: #0b140e !important; 
-    padding: 3px 10px !important; 
+    background-color: #050f08 !important; 
+    padding: 4px 12px !important; 
     border-radius: 4px !important; 
-    border: 1px solid #22442c !important;
+    border: 1px solid #1b4d2c !important;
+    font-size: 1.1rem !important;
 }
 
-/* DESTAQUE DO VENCEDOR DA MESA */
+/* 🟢 IMPACTO TOTAL: DUPLA VENCEDORA DA MESA */
 .vencedor-destaque { 
-    background-color: #1b4728 !important; 
-    border: 1px solid #2da750 !important;
-    box-shadow: inset 0 0 8px rgba(45, 167, 80, 0.3);
+    background-color: #174c26 !important; 
+    border: 1px solid #39e66d !important;
+    box-shadow: inset 0 0 10px rgba(57, 230, 109, 0.4) !important;
 }
 .vencedor-destaque .jogador-nome { 
-    color: #39e66d !important; /* Verde neon para a dupla vencedora */
+    color: #39e66d !important; /* 🟢 VERDE NEON: Salta aos olhos instantaneamente */
 }
 .vencedor-destaque .jogador-resultado {
-    background-color: #2da750 !important;
-    color: #ffffff !important;
-    border-color: #39e66d !important;
+    background-color: #39e66d !important;
+    color: #000000 !important; /* Placar com fundo verde vibrante e número preto */
+    border-color: #ffffff !important;
 }
 
 /* 🏆 CARD HISTÓRICO GALERIA */
 .galeria-card {
-    background: #0f1f15;
-    border: 1px solid #22442c;
-    border-left: 5px solid #ffbf00;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 15px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    background: #161b22 !important;
+    border: 1px solid #30363d !important;
+    border-left: 5px solid #ffbf00 !important;
+    border-radius: 8px !important;
+    padding: 20px !important;
+    margin-bottom: 15px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
 }
-.galeria-header { display: flex; justify-content: space-between; border-bottom: 1px solid #1c3724; padding-bottom: 6px; margin-bottom: 10px; }
+.galeria-header { display: flex; justify-content: space-between; border-bottom: 1px solid #30363d; padding-bottom: 6px; margin-bottom: 10px; }
 .galeria-titulo-evento { font-size: 1.2rem; font-weight: bold; color: #ffbf00; }
-.galeria-data { color: #a3b899; font-size: 0.9rem; }
+.galeria-data { color: #8b949e; font-size: 0.9rem; }
 .galeria-linha-campeao { font-size: 1.15rem; font-weight: bold; color: #ffffff; }
 .galeria-ouro { color: #ffbf00; }
-.galeria-linha-secundaria { color: #cbd5e1; font-size: 1rem; margin-top: 2px; }
+.galeria-linha-secundaria { color: #c9d1d9; font-size: 1rem; margin-top: 2px; }
