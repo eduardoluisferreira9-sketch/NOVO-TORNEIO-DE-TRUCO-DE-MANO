@@ -61,66 +61,87 @@ def carregar_estilo_premium():
 
 st.markdown(carregar_estilo_premium(), unsafe_allow_html=True)
 
-# Injeção global de CSS com as classes necessárias para renderização correta do Telão e Impressão
+modo_telao = (st.session_state.perfil_usuario == "Telão")
+
+# Injeção global de CSS com remoção forçada de barras de rolagem no modo telão
 estilos_css = ""
 if os.path.exists("estilo.css"):
     with open("estilo.css", "r", encoding="utf-8") as f:
         estilos_css = f.read()
+
+# CSS customizado contra rolagem de página para o Modo Telão
+css_anti_rolagem = ""
+if modo_telao:
+    css_anti_rolagem = """
+    html, body, [data-testid="stAppViewContainer"], .main, .block-container {
+        max-height: 100vh !important;
+        overflow-y: hidden !important;
+        overflow-x: hidden !important;
+        padding-top: 1rem !important;
+        padding-bottom: 0px !important;
+    }
+    .mesa-container {
+        padding: 8px !important;
+        margin-bottom: 5px !important;
+    }
+    """
     
 st.markdown(f"""
 <style>
     {estilos_css}
+    {css_anti_rolagem}
     
     /* Classes de Fallback para Garantir Renderização Visual do Telão no Streamlit */
     .grade-telao-dinamica {{
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 15px;
-        padding: 10px;
+        gap: 12px;
+        padding: 5px;
     }}
     .mesa-container {{
         background-color: #1e2622;
         border: 1px solid #3d4f45;
         border-radius: 8px;
-        padding: 12px;
+        padding: 10px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        margin-bottom: 10px;
     }}
     .mesa-header {{
         display: flex;
         justify-content: space-between;
         align-items: center;
         border-bottom: 1px solid #3d4f45;
-        padding-bottom: 6px;
-        margin-bottom: 8px;
+        padding-bottom: 4px;
+        margin-bottom: 6px;
         font-weight: bold;
         color: #ffbf00;
+        font-size: 0.95rem;
     }}
     .mesa-status-pendente {{
         background-color: #8a6d00;
         color: #ffffff;
-        padding: 2px 6px;
+        padding: 1px 5px;
         border-radius: 4px;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
     }}
     .mesa-status-concluido {{
         background-color: #1e5a34;
         color: #ffffff;
-        padding: 2px 6px;
+        padding: 1px 5px;
         border-radius: 4px;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
     }}
     .mesa-corpo {{
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 4px;
     }}
     .jogador-linha {{
         display: flex;
         justify-content: space-between;
-        padding: 4px 6px;
+        padding: 3px 5px;
         border-radius: 4px;
         background-color: #151b18;
+        font-size: 0.9rem;
     }}
     .vencedor-destaque {{
         background-color: #244b33 !important;
@@ -253,18 +274,21 @@ def exibir_podio_arena(lista_classificada):
                 </div>
             """, unsafe_allow_html=True)
 
+# 🔄 FRAGMENTO CORRIGIDO: Executa e desconecta do gargalo de escrita em lote no disco
 @st.fragment(run_every=1)
 def renderizar_cronometro():
     c_dados = dados.get('Cronometro', {'TempoRestanteSegundos': 2700, 'Ativo': False, 'FimRodada': False})
     
+    # Executa a contagem em memória fluida interna do fragmento
     if c_dados['Ativo'] and c_dados['TempoRestanteSegundos'] > 0:
         c_dados['TempoRestanteSegundos'] -= 1
+        st.session_state.dados['Cronometro']['TempoRestanteSegundos'] = c_dados['TempoRestanteSegundos']
         
     if c_dados['TempoRestanteSegundos'] == 0 and c_dados['Ativo']:
         c_dados['Ativo'] = False
         c_dados['FimRodada'] = True
-        dados['Cronometro'] = c_dados
-        gerenciador_dados.salvar_dados(dados)
+        st.session_state.dados['Cronometro'] = c_dados
+        gerenciador_dados.salvar_dados(st.session_state.dados)
         st.rerun()
         
     segundos_totais = c_dados['TempoRestanteSegundos']
@@ -285,10 +309,11 @@ def renderizar_cronometro():
         cor_relogio = "#28a745"
         texto_tempo = f"{minutos:02d}:{segundos:02d}"
         
-    tamanho_fonte = "3.8rem" if modo_telao else "3.2rem"
+    tamanho_fonte = "3.2rem" if modo_telao else "2.8rem"
+    margin_bot = "5px" if modo_telao else "15px"
     
     st.markdown(f"""
-        <div style="background-color: #121815; border: 2px solid {cor_relogio}; border-radius: 10px; padding: 10px; text-align: center; margin-bottom: 15px; box-shadow: 0 0 15px rgba(0,0,0,0.5);">
+        <div style="background-color: #121815; border: 2px solid {cor_relogio}; border-radius: 10px; padding: 6px; text-align: center; margin-bottom: {margin_bot}; box-shadow: 0 0 15px rgba(0,0,0,0.5);">
             <span style="font-size: {tamanho_fonte}; font-family: 'Courier New', monospace; font-weight: bold; color: {cor_relogio}; line-height: 1.1;">{texto_tempo}</span>
         </div>
     """, unsafe_allow_html=True)
@@ -302,8 +327,8 @@ if modo_telao:
     rodada_txt = f"• {dados['RodadaAtual']}ª Rodada" if dados['Status'] == 'Em Andamento' else f"• {dados['Status']}"
     
     st.markdown(f"""
-        <div style='text-align: center; margin-bottom: 5px;'>
-            <h1 style='color: #ffbf00 !important; margin: 0; font-size: 2.2rem;'>🃏 {titulo_torneio_show} <span style='color:#a3cfb6; font-size: 1.6rem;'>{rodada_txt}</span></h1>
+        <div style='text-align: center; margin-bottom: 2px;'>
+            <h1 style='color: #ffbf00 !important; margin: 0; font-size: 2.0rem;'>🃏 {titulo_torneio_show} <span style='color:#a3cfb6; font-size: 1.4rem;'>{rodada_txt}</span></h1>
         </div>
     """, unsafe_allow_html=True)
     
@@ -311,7 +336,7 @@ if modo_telao:
         renderizar_cronometro()
         
     if st.session_state.tela_telao == "jogos":
-        st.markdown("<h3 style='color: #ffbf00; margin-top:0; margin-bottom:10px; text-align:center;'>⚔️ CONFRONTOS DA RODADA AO VIVO</h3>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color: #ffbf00; margin-top:0; margin-bottom:5px; text-align:center;'>⚔️ CONFRONTOS DA RODADA AO VIVO</h4>", unsafe_allow_html=True)
         if 'RodadaAtual' in dados and 'Rodadas' in dados and len(dados['Rodadas']) > 0:
             rodada_atual_num = dados['RodadaAtual']
             rodada_atual = next((r for r in dados['Rodadas'] if r.get('Numero') == rodada_atual_num), None)
@@ -319,7 +344,6 @@ if modo_telao:
             if rodada_atual and 'Mesas' in rodada_atual:
                 mesas = rodada_atual.get('Mesas', [])
                 
-                # Renderização nativa usando colunas do Streamlit em vez de string HTML gigante exposta
                 col_t1, col_t2 = st.columns(2)
                 for idx, m in enumerate(mesas):
                     col_alvo = col_t1 if idx % 2 == 0 else col_t2
@@ -357,7 +381,7 @@ if modo_telao:
         st.rerun()
         
     else:
-        st.markdown("<h3 style='color: #ffbf00; margin-top:0; margin-bottom:10px; text-align:center;'>📊 CLASSIFICAÇÃO GERAL E EM DESTAQUE</h3>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color: #ffbf00; margin-top:0; margin-bottom:5px; text-align:center;'>📊 CLASSIFICAÇÃO GERAL E EM DESTAQUE</h4>", unsafe_allow_html=True)
         if dados.get('Jogadores'):
             lista_classificada = motor_truco.processar_classificacao(dados)
             exibir_podio_arena(lista_classificada)
@@ -368,7 +392,7 @@ if modo_telao:
                 'Nome': 'Dupla / Competidor', 'Pts': 'Pontos', 'Vit': 'Vitórias',
                 'SaldoSets': 'Saldo Sets', 'SaldoTent': 'Saldo Tentos', 'FlorPró': 'Flores', 'Bukes': 'Buchholz'
             })
-            st.dataframe(df_visual[['Dupla / Competidor', 'Pontos', 'Vitórias', 'Saldo Sets', 'Saldo Tentos', 'Flores', 'Buchholz']], use_container_width=True, height=280)
+            st.dataframe(df_visual[['Dupla / Competidor', 'Pontos', 'Vitórias', 'Saldo Sets', 'Saldo Tentos', 'Flores', 'Buchholz']], use_container_width=True, height=240)
         else:
             st.warning("Nenhum competidor cadastrado.")
             
@@ -393,7 +417,6 @@ else:
         abas_lista.append("📝 Inscrição Online")
         
     if st.session_state.perfil_usuario == "Administrador":
-        # Lançar mesas só aparece se o torneio já saiu da fase de configuração
         if dados['Status'] != 'Configuração' and len(dados.get('Rodadas', [])) > 0:
             abas_lista.append("⚔️ Lançar Mesas")
         abas_lista.append("⚙️ Painel de Controle Admin")
@@ -560,12 +583,12 @@ else:
                                     st.success(f"Mesa {m['Mesa']} Lançada com Sucesso!")
                                     st.rerun()
             else:
-                st.info("Nenhuma rodada gerada até o momento.")
+                st.info("Nenhum jogo ativo nesta rodada.")
         aba_index += 1
 
 
 # ==============================================================================
-# ⚙️ 6ª PARTE: PAINEL DE CONTROLE ADMIN & PROTEÇÃO PREVENTIVA CONTRA ERROS NO START
+# ⚙️ 6ª PARTE: PAINEL DE CONTROLE ADMIN & VIRADA DE RODADA DO SISTEMA SUÍÇO
 # ==============================================================================
     if "⚙️ Painel de Controle Admin" in abas_lista:
         with abas_criadas[aba_index]:
@@ -603,7 +626,7 @@ else:
                                 st.rerun()
                                 
                 else:
-                    st.markdown("> **Instruções do Lote:** Copie uma lista inteira de nomes (do Bloco de Notas ou WhatsApp) e cole no campo abaixo. Insira **um competidor por linha**.")
+                    st.markdown("> **Instruções do Lote:** Copie uma lista inteira de nomes e cole no campo abaixo. Insira **um competidor por linha**.")
                     entidade_lote = st.text_input("Entidade / Cidade padrão atribuída a este lote:", value="MESA", key="ent_lote").strip().upper()
                     texto_lote = st.text_area("Cole as linhas com os nomes dos competidores aqui:", height=180, placeholder="DUPLA ALVES & GOMES\nMARCOS SOUZA\nTRUQUEIROS DA COSTA")
                     
@@ -638,7 +661,6 @@ else:
                     if len(dados.get('Jogadores', [])) < 2:
                         st.error("Erro Crítico: É obrigatório ter no mínimo 2 competidores para iniciar o chaveamento.")
                     else:
-                        # Inicialização analítica preventiva de chaves para evitar AttributeError no motor_truco
                         for j in dados['Jogadores']:
                             j['Pts'] = j.get('Pts', 0)
                             j['Vit'] = j.get('Vit', 0)
@@ -663,7 +685,6 @@ else:
                         
                         dados['Rodadas'] = []
                         
-                        # 🛡️ PROTEÇÃO TRATADA CONTRA ERROS DE ATRIBUTO NO SEU MOTOR EXTERNO
                         try:
                             primeira_rodada = motor_truco.gerar_rodada_suica(dados, 1)
                             if primeira_rodada is not None:
@@ -672,9 +693,9 @@ else:
                                 st.success("Campeonato Oficial Iniciado! Chaves do Sistema Suíço Geradas.")
                                 st.rerun()
                             else:
-                                st.error("O motor de emparelhamento retornou um objeto nulo (None). Verifique as regras de chaveamento.")
+                                st.error("O motor de emparelhamento retornou um objeto nulo (None).")
                         except AttributeError as e:
-                            st.error(f"❌ Erro de Atributo detectado no motor_truco: {str(e)}. Certifique-se de que o arquivo 'motor_truco.py' aceita a estrutura padrão de dicionário.")
+                            st.error(f"❌ Erro de Atributo detectado no motor_truco: {str(e)}.")
                         except Exception as ex:
                             st.error(f"❌ Erro inesperado ao processar chaveamento: {str(ex)}")
                         
