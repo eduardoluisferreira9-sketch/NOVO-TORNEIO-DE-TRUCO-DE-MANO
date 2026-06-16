@@ -1,141 +1,111 @@
 /* ==========================================================================
-   🎨 ESTILIZAÇÃO ARENA TRUCO PREMIUM - VERSÃO MULTIPÁGINAS SEGURA
+   👑 DESIGN ARENA TRUCO PREMIUM - RESOLUÇÃO VISUAL DEFINITIVA (MODERNO)
    ========================================================================== */
 
-/* 🌌 FUNDO GERAL DA INTERFACE */
+/* 🌌 FUNDO GERAL IMERSIVO */
 .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
-    background-color: #0f111a !important;
+    background-color: #0b0d13 !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
 }
 
-/* 📋 BOX DE ASSINATURA - EDUARDO LUIS FERREIRA */
-.dev-assinatura-container {
-    background-color: #161925 !important;
-    border: 1px solid #ffca28 !important;
-    border-left: 5px solid #ffca28 !important;
+/* 📋 BARRA LATERAL (SIDEBAR) REAGRUPADA E CORRIGIDA */
+[data-testid="stSidebar"] {
+    background-color: #111420 !important;
+    border-right: 1px solid #1f2438 !important;
+}
+
+/* Força os textos da sidebar (como 'Controle de Exibição' e Checkboxes) a ficarem brancos e visíveis */
+[data-testid="stSidebar"] section, [data-testid="stSidebar"] label, [data-testid="stSidebar"] span {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+/* 📝 DESIGN DO FORMULÁRIO DE INSCRIÇÃO (SAI O VISUAL QUADRADO, ENTRA O CARD PREMIUM) */
+[data-testid="stForm"] {
+    background: #121624 !important;
+    border: 1px solid #232a45 !important;
+    border-radius: 12px !important;
+    padding: 30px !important;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.4) !important;
+}
+
+/* Títulos e Labels do Formulário */
+h1 {
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    letter-spacing: -1px !important;
+}
+
+h2, h3, label, [data-testid="stMarkdownContainer"] p {
+    color: #e2e8f0 !important;
+    font-size: 1.05rem !important;
+    font-weight: 600 !important;
+    margin-bottom: 6px !important;
+}
+
+/* 📥 INPUTS DE TEXTO (CORREÇÃO DOS BLOCOS BRANCOS GIGANTES) */
+.stTextInput input, [data-testid="stTextInput"] input {
+    background-color: #1a1f33 !important; /* Fundo escuro elegante em vez de branco total */
+    color: #ffffff !important; /* Texto digitado em branco */
+    border: 2px solid #2d3654 !important;
     border-radius: 8px !important;
-    padding: 15px !important;
-    margin-bottom: 20px !important;
+    padding: 12px 16px !important;
+    font-size: 1.1rem !important;
+    transition: all 0.3s ease !important;
 }
 
-/* 🏆 PÓDIO DOS CAMPEÕES */
-.podio-container {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
-    gap: 15px !important;
+/* Efeito de foco quando o usuário clica para digitar */
+.stTextInput input:focus, [data-testid="stTextInput"] input:focus {
+    border-color: #ffca28 !important; /* Borda dourada ao selecionar */
+    box-shadow: 0 0 10px rgba(255, 202, 40, 0.2) !important;
+    background-color: #1d233a !important;
 }
-.podio-card {
-    background: #161925 !important;
+
+/* 🚀 BOTÃO ENVIAR INSCRIÇÃO (SAI O BOTÃO BRANCO SEM TEXTO) */
+.stButton button, [data-testid="stBaseButton-secondary"] {
+    background: linear-gradient(135px, #ffca28 0%, #ffb300 100%) !important; /* Degradê Ouro */
+    color: #0b0d13 !important; /* Texto em preto para dar contraste máximo */
+    font-size: 1.1rem !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    padding: 14px 28px !important;
+    border: none !important;
     border-radius: 8px !important;
-    padding: 15px !important;
-    text-align: center !important;
-    border: 1px solid #2e3b52 !important;
+    width: 100% !important; /* Botão largo moderno */
+    cursor: pointer !important;
+    transition: transform 0.2s, box-shadow 0.2s !important;
+    margin-top: 15px !important;
+    box-shadow: 0 4px 15px rgba(255, 179, 0, 0.3) !important;
 }
-.podio-1 { border: 2px solid #ffca28 !important; }
-.podio-2 { border: 2px solid #ffd54f !important; }
-.podio-3 { border: 2px solid #cd7f32 !important; }
-.podio-posicao { font-size: 1.3rem !important; font-weight: 900 !important; }
-.podio-1 .podio-posicao { color: #ffca28 !important; }
-.podio-2 .podio-posicao { color: #ffd54f !important; }
-.podio-3 .podio-posicao { color: #cd7f32 !important; }
-.podio-nome { font-size: 1.2rem !important; font-weight: bold !important; color: #ffff00 !important; }
 
-/* 📺 CARDS DAS MESAS - ESTILO MESA DE TRUCO PROFISSIONAL */
+.stButton button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(255, 179, 0, 0.5) !important;
+    color: #0b0d13 !important;
+}
+
+.stButton button:active {
+    transform: translateY(1px) !important;
+}
+
+/* 📺 CARDS DAS MESAS - MANTENDO O PADRÃO PARA QUANDO DEU O INÍCIO */
 .grade-telao-dinamica {
     display: grid !important;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
-    gap: 16px !important;
+    gap: 18px !important;
 }
 .mesa-container {
-    background: linear-gradient(135px, #008a3c 0%, #006b2e 100%) !important; /* 🟢 Verde feltro profissional */
-    border: 3px solid #5d4037 !important; /* Moldura de madeira marrom */
-    border-top: 6px solid #8d6e63 !important; 
+    background: linear-gradient(135px, #008a3c 0%, #006b2e 100%) !important;
+    border: 3px solid #5d4037 !important;
+    border-top: 6px solid #8d6e63 !important;
     border-radius: 12px !important;
-    padding: 16px !important;
-    margin-bottom: 12px !important;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5) !important;
+    padding: 18px !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4) !important;
 }
-.mesa-header {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    font-weight: 900 !important;
-    font-size: 1.4rem !important;
-    color: #ffffff !important; 
-    border-bottom: 2px solid rgba(255, 255, 255, 0.3) !important;
-    padding-bottom: 6px !important;
-    margin-bottom: 12px !important;
-    text-shadow: 2px 2px 3px rgba(0,0,0,0.8) !important;
-}
-.mesa-status-pendente {
-    color: #000000 !important;
-    background-color: #ffca28 !important; 
-    padding: 4px 10px !important;
-    border-radius: 4px !important;
-    font-size: 0.85rem !important;
-    font-weight: bold !important;
-}
-.mesa-status-concluido {
+.jogador-nome {
     color: #ffff00 !important;
-    background-color: rgba(0, 0, 0, 0.6) !important;
-    padding: 4px 10px !important;
-    border-radius: 4px !important;
-    font-size: 0.85rem !important;
-    font-weight: bold !important;
-    border: 1px solid #ffff00 !important;
-}
-
-/* LINHA DOS JOGADORES DENTRO DA MESA */
-.jogador-linha {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    padding: 10px 12px !important;
-    margin-bottom: 6px !important;
-    border-radius: 6px !important;
-    background-color: rgba(0, 36, 15, 0.6) !important; 
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-}
-.jogador-nome { 
-    color: #ffff00 !important; /* 🟡 Nomes em Amarelo Ouro Vivo */
-    font-size: 1.35rem !important;
+    font-size: 1.4rem !important;
     font-weight: 900 !important;
     text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.9) !important;
-}
-.jogador-resultado { 
-    color: #ffffff !important; 
-    font-family: 'Courier New', monospace !important; 
-    font-weight: bold !important; 
-    background-color: #000000 !important; 
-    padding: 4px 10px !important; 
-    border-radius: 4px !important; 
-    border: 1px solid #ffca28 !important;
-    font-size: 1.2rem !important;
-}
-
-/* 👑 DESTAQUE DE VITÓRIA */
-.vencedor-destaque { 
-    background-color: #ffff00 !important; 
-    border: 1px solid #ffffff !important;
-}
-.vencedor-destaque .jogador-nome { color: #000000 !important; text-shadow: none !important; }
-.vencedor-destaque .jogador-resultado { background-color: #000000 !important; color: #ffff00 !important; }
-
-/* 📝 RESTAURAÇÃO COMPLETA DE INPUTS E BOTÕES DO STREAMLIT */
-h1, h2, h3, label, p, .stMarkdown { color: #ffffff !important; }
-
-/* Garante caixas de texto com fundo branco limpo e texto escuro legível */
-.stTextInput input, [data-testid="stTextInput"] input { 
-    background-color: #ffffff !important; 
-    color: #0f111a !important; 
-    border: 2px solid #2e3b52 !important; 
-    border-radius: 6px !important;
-}
-
-/* Garante botões com fundo branco e escrita preta nítida */
-.stButton button, [data-testid="stBaseButton-secondary"] { 
-    background-color: #ffffff !important; 
-    color: #0f111a !important; 
-    font-weight: bold !important; 
-    border-radius: 6px !important;
-    border: 1px solid #cccccc !important;
 }
