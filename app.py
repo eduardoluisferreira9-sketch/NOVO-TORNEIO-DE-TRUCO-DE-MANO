@@ -10,35 +10,39 @@ import motor_truco
 # ==============================================================================
 # 💾 INICIALIZAÇÃO DE DADOS PERSISTENTES (ANTI-RESET)
 # ==============================================================================
+dados_persistidos = gerenciador_dados.carregar_dados()
+
 if 'dados' not in st.session_state:
-    # 🔒 Só lê do arquivo UMA VEZ quando a página carrega do zero
-    dados_carregados = gerenciador_dados.carregar_dados()
+    if dados_persistidos is not None and isinstance(dados_persistidos, dict):
+        st.session_state.dados = dados_persistidos
+    else:
+        st.session_state.dados = {
+            'NomeTorneio': '', 'Status': 'Configuração',
+            'Jogadores': [], 'RodadaAtual': 0, 'Rodadas': [],
+            'TempoLimiteMinutos': 45,  
+            'Cronometro': {'TempoRestanteSegundos': 2700, 'Ativo': False, 'FimRodada': False}
+        }
+else:
+    if dados_persistidos is not None and dados_persistidos != st.session_state.dados:
+        st.session_state.dados = dados_persistidos
 
-    # BLINDAGEM: Se o arquivo vier vazio ou der erro, usa um dicionário padrão
-    if not dados_carregados or not isinstance(dados_carregados, dict):
-        dados_carregados = {'Mesas': {}, 'Status': 'Em Andamento', 'RodadaAtual': 1}
+dados = st.session_state.dados
 
-    st.session_state['dados'] = dados_carregados
+# Garante chaves essenciais com segurança
+if 'TempoLimiteMinutos' not in dados: dados['TempoLimiteMinutos'] = 45
+if 'Cronometro' not in dados: dados['Cronometro'] = {'TempoRestanteSegundos': 2700, 'Ativo': False, 'FimRodada': False}
+if 'tela_telao' not in st.session_state: st.session_state.tela_telao = "jogos"
+if 'HistoricoCampeoes' not in dados: dados['HistoricoCampeoes'] = []
 
-# Puxa sempre da memória estável do navegador para não sobrecarregar o arquivo
-dados = st.session_state['dados']
-
-# Garante que o dicionário do Cronômetro exista com segurança dentro de dados
-if 'Cronometro' not in dados:
-    dados['Cronometro'] = {
-        'TempoRestanteSegundos': 3300,  # 55 minutos padrão
-        'Ativo': False,
-        'FimRodada': False
-    }
 # 🃏 CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(
     page_title="Central de Torneios de Truco - Planta Baixa",
     page_icon="🃏",
     layout="wide"
 )
+
 @st.cache_data
 def carregar_estilo_premium():
-    """Lê o CSS apenas uma vez e guarda na memória para evitar que a tela pisque"""
     base_dir = os.path.dirname(__file__)
     if os.path.basename(base_dir) == "pages":
         css_path = os.path.join(os.path.dirname(base_dir), "estilo.css")
@@ -51,34 +55,6 @@ def carregar_estilo_premium():
     return ""
 
 st.markdown(carregar_estilo_premium(), unsafe_allow_html=True)
-
-# =========================================================
-# 🔒 ARQUITETURA DE PERSISTÊNCIA INQUEBRÁVEL (FIM DOS RESETS)
-# =========================================================
-# Sempre tenta ler o arquivo físico primeiro. Se existir, ignora o reset de memória.
-dados_persistidos = gerenciador_dados.carregar_dados()
-
-if 'dados' not in st.session_state:
-    if dados_persistidos is not None:
-        st.session_state.dados = dados_persistidos
-    else:
-        st.session_state.dados = {
-            'NomeTorneio': '', 'Status': 'Configuração',
-            'Jogadores': [], 'RodadaAtual': 0, 'Rodadas': [],
-            'TempoLimiteMinutos': 45,  
-            'Cronometro': {'TempoRestanteSegundos': 2700, 'Ativo': False, 'FimRodada': False}
-        }
-else:
-    # Se a sessão existe mas o arquivo em disco foi atualizado por fora, sincroniza
-    if dados_persistidos is not None and dados_persistidos != st.session_state.dados:
-        st.session_state.dados = dados_persistidos
-
-dados = st.session_state.dados
-
-# Garante chaves essenciais
-if 'TempoLimiteMinutos' not in dados: dados['TempoLimiteMinutos'] = 45
-if 'Cronometro' not in dados: dados['Cronometro'] = {'TempoRestanteSegundos': 2700, 'Ativo': False, 'FimRodada': False}
-if 'tela_telao' not in st.session_state: st.session_state.tela_telao = "jogos"
 
 # =========================================================
 # 👑 PAINEL DE ASSINATURA DO DESENVOLVEDOR (SIDEBAR)
@@ -94,13 +70,10 @@ st.sidebar.markdown(f"""
 st.sidebar.markdown("### 🖥️ Controle de Exibição")
 modo_telao = st.sidebar.checkbox("📺 ATIVAR MODO TELÃO (TV / PROJETOR)", value=False)
 
-# Injeção das regras de estilo CSS
 if os.path.exists("estilo.css"):
     with open("estilo.css", "r", encoding="utf-8") as f:
         estilos_css = f.read()
     
-    # Adiciona classe para travar tela se o modo telão estiver ativo
-    classe_telao = "class='modo-telao-ativo'" if modo_telao else ""
     st.markdown(f"""
     <style>
         {estilos_css}
@@ -121,25 +94,22 @@ if os.path.exists("estilo.css"):
     </style>
     """, unsafe_allow_html=True)
 
-
 # =========================================================
 # FUNÇÃO AUXILIAR: RENDERIZAR PODIO DOS REIS DO TRUCO
 # =========================================================
 def exibir_podio_arena(lista_classificada):
     if not lista_classificada: return
     
-    # Captura os 4 primeiros colocados
     c1 = lista_classificada[0]['Nome'] if len(lista_classificada) > 0 else "---"
     c2 = lista_classificada[1]['Nome'] if len(lista_classificada) > 1 else "---"
     c3 = lista_classificada[2]['Nome'] if len(lista_classificada) > 2 else "---"
     c4 = lista_classificada[3]['Nome'] if len(lista_classificada) > 3 else "---"
     
-    # Calcula o Rei da Flor (Maior FlorPró)
     rei_flor_nome = "N/A"
     maior_flor_pontos = -1
     for jogador in lista_classificada:
-        if jogador['FlorPró'] > maior_flor_pontos:
-            maior_flor_pontos = joker = jogador['FlorPró']
+        if jogador.get('FlorPró', 0) > maior_flor_pontos:
+            maior_flor_pontos = jogador.get('FlorPró', 0)
             rei_flor_nome = jogador['Nome']
             
     col_podio, col_flor = st.columns([3, 1])
@@ -147,20 +117,20 @@ def exibir_podio_arena(lista_classificada):
     with col_podio:
         st.markdown(f"""
             <div class="podio-container">
-                <div class="podio-card podio-1">
-                    <div class="podio-posicao">🥇 1º Lugar</div>
-                    <div class="podio-nome">{c1}</div>
-                </div>
                 <div class="podio-card podio-2">
                     <div class="podio-posicao">🥈 2º Lugar</div>
                     <div class="podio-nome">{c2}</div>
+                </div>
+                <div class="podio-card podio-1">
+                    <div class="podio-posicao">🥇 1º Lugar</div>
+                    <div class="podio-nome">{c1}</div>
                 </div>
                 <div class="podio-card podio-3">
                     <div class="podio-posicao">🥉 3º Lugar</div>
                     <div class="podio-nome">{c3}</div>
                 </div>
                 <div class="podio-card podio-4">
-                    <div class="podio-posicao">🏅 4º Lugar</div>
+                    <div class="podio-posicao">% 4º Lugar</div>
                     <div class="podio-nome">{c4}</div>
                 </div>
             </div>
@@ -183,7 +153,6 @@ def exibir_podio_arena(lista_classificada):
                 </div>
             """, unsafe_allow_html=True)
 
-
 # =========================================================
 # ⏱️ CRONÔMETRO
 # =========================================================
@@ -191,22 +160,21 @@ def exibir_podio_arena(lista_classificada):
 def renderizar_cronometro():
     c_dados = dados.get('Cronometro', {'TempoRestanteSegundos': 2700, 'Ativo': False, 'FimRodada': False})
     
-    # Se o cronômetro estiver ativo, reduz 1 segundo a cada passada automática do fragmento
     if c_dados['Ativo'] and c_dados['TempoRestanteSegundos'] > 0:
         c_dados['TempoRestanteSegundos'] -= 1
         
-    if c_dados['TempoRestanteSegundos'] == 0:
-            c_dados['Ativo'] = False
-            c_dados['FimRodada'] = True
-            dados['Cronometro'] = c_dados
-            gerenciador_dados.salvar_dados(dados)
-            st.rerun()
+    if c_dados['TempoRestanteSegundos'] == 0 and c_dados['Ativo']:
+        c_dados['Ativo'] = False
+        c_dados['FimRodada'] = True
+        dados['Cronometro'] = c_dados
+        gerenciador_dados.salvar_dados(dados)
+        st.rerun()
         
     segundos_totais = c_dados['TempoRestanteSegundos']
     minutos = segundos_totais // 60
     segundos = segundos_totais % 60
     
-    if c_dados['FimRodada'] or segundos_totais == 0:
+    if c_dados.get('FimRodada') or segundos_totais == 0:
         cor_relogio = "#ff4b4b"
         texto_tempo = "00:00 - TUDO É FALTA! 🔔"
         if os.path.exists("alerta.mp3"):
@@ -228,9 +196,8 @@ def renderizar_cronometro():
         </div>
     """, unsafe_allow_html=True)
 
-
 # ==============================================================================
-# 📺 RENDERIZAÇÃO: MODO TELÃO (100% VISUAL INTERATIVO ANTI-ROLAGEM)
+# 📺 RENDERIZAÇÃO: MODO TELÃO
 # ==============================================================================
 if modo_telao:
     titulo_torneio_show = dados.get('NomeTorneio', 'Torneio de Truco')
@@ -247,42 +214,45 @@ if modo_telao:
         
     if st.session_state.tela_telao == "jogos":
         st.markdown("<h3 style='color: #ffbf00; margin-top:0; margin-bottom:10px; text-align:center;'>⚔️ CONFRONTOS DA RODADA AO VIVO</h3>", unsafe_allow_html=True)
-        rodada_atual_num = dados['RodadaAtual']
-        rodada_atual = next((r for r in dados['Rodadas'] if r['Numero'] == rodada_atual_num), None)
-        
-        if rodada_atual:
-            mesas = rodada_atual.get('Mesas', [])
-            html_grade = "<div class='grade-telao-dinamica'>"
+        if 'RodadaAtual' in dados and 'Rodadas' in dados:
+            rodada_atual_num = dados['RodadaAtual']
+            rodada_atual = next((r for r in dados['Rodadas'] if r.get('Numero') == rodada_atual_num), None)
             
-            for m in mesas:
-                status_txt = "EM ANDAMENTO" if m['Status'] == 'Pendente' else "CONCLUÍDO"
-                status_classe = "mesa-status-concluido" if m['Status'] == 'Concluído' else "mesa-status-pendente"
-                vencedor_j1 = "vencedor-destaque" if (m['Status'] == 'Concluído' and int(m['SetsJ1']) > int(m['SetsJ2'])) else ""
-                vencedor_j2 = "vencedor-destaque" if (m['Status'] == 'Concluído' and int(m['SetsJ2']) > int(m['SetsJ1'])) else ""
+            if rodada_atual and 'Mesas' in rodada_atual:
+                mesas = rodada_atual.get('Mesas', [])
+                html_grade = "<div class='grade-telao-dinamica'>"
                 
-                html_grade += f"""
-                <div class="mesa-container">
-                    <div class="mesa-header">
-                        <span>🚨 Mesa {m['Mesa']}</span>
-                        <span class="{status_classe}">{status_txt}</span>
-                    </div>
-                    <div class="mesa-corpo">
-                        <div class="jogador-linha {vencedor_j1}">
-                            <span class="jogador-nome">👤 {m['Jogador1']}</span>
-                            <span class="jogador-resultado">{m['SetsJ1']}S ({m['TentosJ1']}T)</span>
+                for m in mesas:
+                    status_txt = "EM ANDAMENTO" if m.get('Status') == 'Pendente' else "CONCLUÍDO"
+                    status_classe = "mesa-status-concluido" if m.get('Status') == 'Concluído' else "mesa-status-pendente"
+                    
+                    vencedor_j1 = "vencedor-destaque" if (m.get('Status') == 'Concluído' and int(m.get('SetsJ1', 0)) > int(m.get('SetsJ2', 0))) else ""
+                    vencedor_j2 = "vencedor-destaque" if (m.get('Status') == 'Concluído' and int(m.get('SetsJ2', 0)) > int(m.get('SetsJ1', 0))) else ""
+                    
+                    html_grade += f"""
+                    <div class="mesa-container">
+                        <div class="mesa-header">
+                            <span>🚨 Mesa {m.get('Mesa')}</span>
+                            <span class="{status_classe}">{status_txt}</span>
                         </div>
-                        <div class="jogador-linha {vencedor_j2}">
-                            <span class="jogador-nome">👤 {m['Jogador2']}</span>
-                            <span class="jogador-resultado">{m['SetsJ2']}S ({m['TentosJ2']}T)</span>
+                        <div class="mesa-corpo">
+                            <div class="jogador-linha {vencedor_j1}">
+                                <span class="jogador-nome">👤 {m.get('Jogador1')}</span>
+                                <span class="jogador-resultado">{m.get('SetsJ1')}S ({m.get('TentosJ1')}T)</span>
+                            </div>
+                            <div class="jogador-linha {vencedor_j2}">
+                                <span class="jogador-nome">👤 {m.get('Jogador2')}</span>
+                                <span class="jogador-resultado">{m.get('SetsJ2')}S ({m.get('TentosJ2')}T)</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-                """
-            
-            html_grade += "</div>"
-            st.markdown(html_grade, unsafe_allow_html=True)
+                    """
+                html_grade += "</div>"
+                st.markdown(html_grade, unsafe_allow_html=True)
+            else:
+                st.info("Nenhum jogo ativo nesta rodada.")
         else:
-            st.info("Nenhum jogo ativo nesta rodada.")
+            st.info("Aguardando definição das rodadas.")
             
         time.sleep(12)
         st.session_state.tela_telao = "classificacao"
@@ -292,7 +262,6 @@ if modo_telao:
         st.markdown("<h3 style='color: #ffbf00; margin-top:0; margin-bottom:10px; text-align:center;'>📊 CLASSIFICAÇÃO GERAL E EM DESTAQUE</h3>", unsafe_allow_html=True)
         if dados.get('Jogadores'):
             lista_classificada = motor_truco.processar_classificacao(dados)
-            
             exibir_podio_arena(lista_classificada)
             
             df_class = pd.DataFrame(lista_classificada)
@@ -317,11 +286,15 @@ else:
     st.markdown(f"<p style='text-align: center; font-size: 1rem; color: #a3cfb6 !important;'>Engine de Torneio Desenvolvida por <b>{gerenciador_dados.NOME_CRIADOR}</b></p>", unsafe_allow_html=True)
 
     ip_local = gerenciador_dados.obter_ip_da_rede()
-    if dados['Status'] == 'Configuração': st.info(f"📢 **Inscrições Abertas!** Link das inscrições: `http://{ip_local}:8501`")
-    else: st.info(f"🌐 **Rede Local Ativa:** Endereço do telão da arena: `http://{ip_local}:8501`")
+    if dados['Status'] == 'Configuração': 
+        st.info(f"📢 **Inscrições Abertas!** Endereço local: `http://{ip_local}:8501`")
+    else: 
+        st.info(f"🌐 **Rede Local Ativa:** Endereço local: `http://{ip_local}:8501`")
 
-    if dados['Status'] == 'Configuração': abas = ["📝 Inscrição Online", "📊 Classificação Geral", "⚙️ Painel de Controle", "🏆 Galeria de Campeões"]
-    else: abas = ["📊 Classificação Geral", "⚔️ Mesas & Lançamento", "⚙️ Painel de Controle", "🏆 Galeria de Campeões"]
+    if dados['Status'] == 'Configuração': 
+        abas = ["📝 Inscrição Online", "📊 Classificação Geral", "⚙️ Painel de Controle", "🏆 Galeria de Campeões"]
+    else: 
+        abas = ["📊 Classificação Geral", "⚔️ Mesas & Lançamento", "⚙️ Painel de Controle", "🏆 Galeria de Campeões"]
 
     abas_criadas = st.tabs(abas)
 
@@ -341,10 +314,12 @@ else:
                 entidade_atleta = st.text_input("Sua Entidade / Equipe / Clube:").strip().upper()
                 botao_enviar = st.form_submit_button("Enviar Minha Inscrição 🚀")
                 if botao_enviar:
-                    if not nome_atleta: st.error("Preencha o campo do Nome.")
+                    if not nome_atleta: 
+                        st.error("Preencha o campo do Nome.")
                     else:
                         nomes_existentes = [j['Nome'] for j in dados.get('Jogadores', [])]
-                        if nome_atleta in nomes_existentes: st.warning("Jogador já inscrito!")
+                        if nome_atleta in nomes_existentes: 
+                            st.warning("Jogador já inscrito!")
                         else:
                             entidade_final = entidade_atleta if entidade_atleta else "SEM ENTIDADE"
                             dados['Jogadores'].append({'Nome': nome_atleta, 'Entidade': entidade_final})
@@ -357,8 +332,6 @@ else:
         st.markdown("<h2 style='color: #ffbf00 !important;'>📊 Classificação Estratégica</h2>", unsafe_allow_html=True)
         if dados['Status'] != 'Configuração' and dados.get('Jogadores'):
             lista_classificada = motor_truco.processar_classificacao(dados)
-            
-            # Pódio ativo na aba administrativa também
             st.markdown("### 🏆 Liderança Atual e Destaques")
             exibir_podio_arena(lista_classificada)
             
@@ -381,14 +354,13 @@ else:
         with aba2:
             renderizar_cronometro()
             rodada_atual_num = dados['RodadaAtual']
-            
-            # 🚨 BLINDAGEM CONTRA KEYERROR AQUI:
             rodadas_lista = dados.get('Rodadas', [])
             rodada_atual = next((r for r in rodadas_lista if r['Numero'] == rodada_atual_num), None)
             
             if rodada_atual:
                 col_tit, col_imp = st.columns([3, 1])
-                with col_tit: st.markdown(f"<h2 style='color: #ffbf00 !important;'>⚔️ {rodada_atual_num}ª Rodada Oficial</h2>", unsafe_allow_html=True)
+                with col_tit: 
+                    st.markdown(f"<h2 style='color: #ffbf00 !important;'>⚔️ {rodada_atual_num}ª Rodada Oficial</h2>", unsafe_allow_html=True)
                 with col_imp:
                     st.markdown("<br>", unsafe_allow_html=True)
                     if st.button("🖨️ IMPRIMIR NA ELGIN I9", use_container_width=True):
@@ -396,7 +368,6 @@ else:
                 
                 mesas = rodada_atual.get('Mesas', [])
                 
-                # --- SISTEMA DE IMPRESSÃO ---
                 html_impressao = f"<div class='secao-impressao-sumulas'>"
                 for m in mesas:
                     if m['Jogador1'] == "CHAPÉU" or m['Jogador2'] == "CHAPÉU": continue 
@@ -448,7 +419,7 @@ else:
                         
                         if m['Jogador1'] == "CHAPÉU" or m['Jogador2'] == "CHAPÉU": continue
                             
-                        with st.expandable(f"📝 Lançar Placar - Mesa {m['Mesa']}") if hasattr(st, "expandable") else st.expander(f"📝 Lançar Placar - Mesa {m['Mesa']}"):
+                        with st.expander(f"📝 Lançar Placar - Mesa {m['Mesa']}"):
                             form_key = f"form_mesa_{m['Mesa']}_{rodada_atual_num}"
                             opcoes_sets = ["Aguardando...", f"{m['Jogador1']} 2 x 0", f"{m['Jogador2']} 2 x 0", f"{m['Jogador1']} 2 x 1", f"{m['Jogador2']} 2 x 1"]
                             escolha_set = st.selectbox("Qual o placar em Sets?", opcoes_sets, key=f"sel_{form_key}")
@@ -465,17 +436,127 @@ else:
                             
                             if st.button("Confirmar e Salvar Mesa", key=f"btn_{form_key}"):
                                 if escolha_set != "Aguardando...":
-                                    # 🚨 ACESSO PROTEGIDO À MESA:
                                     alvo = dados['Rodadas'][dados['RodadaAtual'] - 1]['Mesas'][idx]
                                     alvo['Status'] = 'Concluído'
                                     alvo['FloresJ1'] = f1_num
                                     alvo['FloresJ2'] = f2_num
-                                    try: t1_int, t2_int = int(t1_raw), int(t2_raw)
-                                    except Exception: t1_int, t2_int = 0, 0
+                                    try: 
+                                        t1_int, t2_int = int(t1_raw), int(t2_raw)
+                                    except Exception: 
+                                        t1_int, t2_int = 0, 0
                                     
                                     if escolha_set.startswith(alvo['Jogador1']):
                                         alvo['SetsJ1'], alvo['SetsJ2'] = 2, (1 if "2 x 1" in escolha_set else 0)
-                                        if "2 x 0" in escolha_set: alvo['TentosJ1'], alvo['TentosJ2'] = 72, 0
+                                        if "2 x 0" in escolha_set: alvo['TentosJ1'], alvo['TentosJ2'] = 24, 0
                                         else: alvo['TentosJ1'], alvo['TentosJ2'] = t1_int, t2_int
                                     else:
-                                        alvo['SetsJ1'], alvo
+                                        alvo['SetsJ1'], alvo['SetsJ2'] = (1 if "2 x 1" in escolha_set else 0), 2
+                                        if "2 x 0" in escolha_set: alvo['TentosJ1'], alvo['TentosJ2'] = 0, 24
+                                        else: alvo['TentosJ1'], alvo['TentosJ2'] = t1_int, t2_int
+                                        
+                                    gerenciador_dados.salvar_dados(dados)
+                                    st.success(f"Mesa {m['Mesa']} Atualizada!")
+                                    st.rerun()
+
+    # --- ABA 3: PAINEL DE CONTROLE ---
+    with aba3:
+        st.markdown("<h2 style='color: #ffbf00 !important;'>⚙️ Painel de Operações da Mesa</h2>", unsafe_allow_html=True)
+        
+        if dados['Status'] == 'Configuração':
+            nome_torneio_input = st.text_input("Nome do Grande Torneio:", value=dados.get('NomeTorneio', ''))
+            tempo_limite = st.number_input("Tempo de cada rodada (minutos):", min_value=5, max_value=120, value=int(dados.get('TempoLimiteMinutos', 45)))
+            
+            if st.button("🚀 INICIAR E TRANCAR TORNEIO"):
+                if len(dados.get('Jogadores', [])) < 2:
+                    st.error("Adicione competidores antes de iniciar.")
+                else:
+                    dados['NomeTorneio'] = nome_torneio_input if nome_torneio_input else "Torneio de Truco"
+                    dados['TempoLimiteMinutos'] = tempo_limite
+                    dados['Status'] = 'Em Andamento'
+                    dados['RodadaAtual'] = 1
+                    dados['Cronometro'] = {
+                        'TempoRestanteSegundos': tempo_limite * 60,
+                        'Ativo': True,
+                        'FimRodada': False
+                    }
+                    dados['Rodadas'] = [motor_truco.gerar_rodada_suica(dados, 1)]
+                    gerenciador_dados.salvar_dados(dados)
+                    st.success("Torneio Iniciado com Sucesso!")
+                    st.rerun()
+                    
+            st.markdown("### 👥 Gerenciar Jogadores Inscritos")
+            if dados.get('Jogadores'):
+                for idx_j, jog in enumerate(dados['Jogadores']):
+                    col_j1, col_j2 = st.columns([3, 1])
+                    with col_j1: st.write(f"👤 {jog['Nome']} ({jog['Entidade']})")
+                    with col_j2:
+                        if st.button("❌ Remover", key=f"rem_{idx_j}"):
+                            dados['Jogadores'].pop(idx_j)
+                            gerenciador_dados.salvar_dados(dados)
+                            st.rerun()
+        
+        elif dados['Status'] == 'Em Andamento':
+            st.markdown(f"### 🛡️ Gestão da {dados['RodadaAtual']}ª Rodada")
+            
+            c_ativo = dados['Cronometro'].get('Ativo', False)
+            col_btn1, col_btn2 = st.columns(2)
+            with col_btn1:
+                if st.button("⏸️ Pausar Tempo" if c_ativo else "▶️ Iniciar Tempo"):
+                    dados['Cronometro']['Ativo'] = not c_ativo
+                    gerenciador_dados.salvar_dados(dados)
+                    st.rerun()
+            with col_btn2:
+                if st.button("🔄 Reiniciar Cronômetro"):
+                    dados['Cronometro']['TempoRestanteSegundos'] = dados['TempoLimiteMinutos'] * 60
+                    dados['Cronometro']['FimRodada'] = False
+                    gerenciador_dados.salvar_dados(dados)
+                    st.rerun()
+            
+            # Avanço de rodada
+            rodadas_lista = dados.get('Rodadas', [])
+            rodada_atual = next((r for r in rodadas_lista if r['Numero'] == dados['RodadaAtual']), None)
+            todas_concluidas = True
+            if rodada_atual:
+                for m in rodada_atual.get('Mesas', []):
+                    if m['Status'] != 'Concluído': todas_concluidas = False
+            
+            if todas_concluidas:
+                if st.button("🏁 CONCLUIR RODADA E GERAR PRÓXIMA"):
+                    dados['RodadaAtual'] += 1
+                    nova_rodada = motor_truco.gerar_rodada_suica(dados, dados['RodadaAtual'])
+                    if nova_rodada is None:
+                        dados['Status'] = 'Finalizado'
+                        # Salva o campeão no histórico se aplicável
+                        classificacao = motor_truco.processar_classificacao(dados)
+                        if classificacao:
+                            dados['HistoricoCampeoes'].append({
+                                'Torneio': dados['NomeTorneio'],
+                                'Campeao': classificacao[0]['Nome'],
+                                'Data': datetime.now().strftime("%d/%m/%Y")
+                            })
+                    else:
+                        dados['Rodadas'].append(nova_rodada)
+                        dados['Cronometro'] = {
+                            'TempoRestanteSegundos': dados['TempoLimiteMinutos'] * 60,
+                            'Ativo': True,
+                            'FimRodada': False
+                        }
+                    gerenciador_dados.salvar_dados(dados)
+                    st.rerun()
+            else:
+                st.warning("⚠️ Lance o placar de todas as mesas para poder avançar de rodada.")
+                
+        if st.button("🚨 RESET TOTAL (APAGAR CAMPEONATO ATUAL)"):
+            gerenciador_dados.limpar_banco_dados()
+            if 'dados' in st.session_state: del st.session_state.dados
+            st.rerun()
+
+    # --- ABA 4: HISTÓRICO / GALERIA ---
+    with aba4:
+        st.markdown("<h2 style='color: #ffbf00 !important;'>🏆 Galeria do Trunfo Épico</h2>", unsafe_allow_html=True)
+        historico = dados.get('HistoricoCampeoes', [])
+        if historico:
+            for h in historico:
+                st.markdown(f"🏅 **{h['Torneio']}** | Campeão: `{h['Campeao']}` ({h['Data']})")
+        else:
+            st.info("Nenhum torneio arquivado no banco de dados local ainda.")
