@@ -241,7 +241,7 @@ if modo_telao:
         </div>
     """, unsafe_allow_html=True)
     
-    if dados['Status'] == 'Em Andamento':
+if dados['Status'] == 'Em Andamento':
         renderizar_cronometro()
         
     if st.session_state.tela_telao == "jogos":
@@ -275,9 +275,10 @@ if modo_telao:
                         </div>
                     </div>
                 </div>
-        """
-        html_grade += "</div>"
-        st.markdown(html_grade, unsafe_allow_html=True)
+                """
+            
+            html_grade += "</div>"
+            st.markdown(html_grade, unsafe_allow_html=True)
         else:
             st.info("Nenhum jogo ativo nesta rodada.")
             
