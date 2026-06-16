@@ -252,6 +252,7 @@ if dados['Status'] == 'Em Andamento':
         if rodada_atual:
             mesas = rodada_atual.get('Mesas', [])
             html_grade = "<div class='grade-telao-dinamica'>"
+            
             for m in mesas:
                 status_txt = "EM ANDAMENTO" if m['Status'] == 'Pendente' else "CONCLUÍDO"
                 status_classe = "mesa-status-concluido" if m['Status'] == 'Concluído' else "mesa-status-pendente"
