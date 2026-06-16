@@ -270,14 +270,14 @@ if modo_telao:
                                 <span class="jogador-resultado">{m['SetsJ1']}S ({m['TentosJ1']}T)</span>
                             </div>
                             <div class="jogador-linha {vencedor_j2}">
-                                <span class="jogador-nome">👤 {m['Jogador2']}</span>
-                                <span class="jogador-resultado">{m['SetsJ2']}S ({m['TentosJ2']}T)</span>
+        <span class="jogador-nome">👤 {m['Jogador2']}</span>
+        <span class="jogador-resultado">{m['SetsJ2']}S ({m['TentosJ2']}T)</span>
                             </div>
                         </div>
                     </div>
-                """
-html_grade += "</div>"         
-st.markdown(html_grade, unsafe_allow_html=True)
+        """
+        html_grade += "</div>"         
+        st.markdown(html_grade, unsafe_allow_html=True)
         else:
             st.info("Nenhum jogo ativo nesta rodada.")
             
