@@ -10,19 +10,25 @@ import motor_truco
 # =======================================================
 # 💾 INICIALIZAÇÃO DE DADOS PERSISTENTES (ANTI-RESET)
 # =======================================================
-if 'dados' not in st.session_state:
-    st.session_state['dados'] = gerenciador_dados.carregar_dados()
+# Lemos direto do arquivo em todo recarregamento para manter o relógio vivo
+dados_carregados = gerenciador_dados.carregar_dados()
 
-# Atribui a variável global que todo o sistema usa
+# BLINDAGEM: Se o arquivo vier vazio ou der erro, usa um dicionário padrão
+if not dados_carregados or not isinstance(dados_carregados, dict):
+    dados_carregados = {'Mesas': {}, 'Status': 'Em Andamento', 'RodadaAtual': 1}
+
+# Sincroniza tanto o session_state quanto a variável global com o disco
+st.session_state['dados'] = dados_carregados
 dados = st.session_state['dados']
 
-# Garante que o dicionário do Cronômetro exista com um padrão se o JSON estiver vazio
+# Garante que o dicionário do Cronômetro exista com segurança dentro de dados
 if 'Cronometro' not in dados:
     dados['Cronometro'] = {
         'TempoRestanteSegundos': 3300,  # 55 minutos padrão
         'Ativo': False,
         'FimRodada': False
     }
+    
 # 🃏 CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(
     page_title="Central de Torneios de Truco - Planta Baixa",
