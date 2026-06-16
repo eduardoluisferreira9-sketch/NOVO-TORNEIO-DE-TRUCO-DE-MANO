@@ -91,7 +91,7 @@ st.markdown(f"""
     {estilos_css}
     {css_anti_rolagem}
     
-    /* Fallback de Classes de Layout caso estilo.css falhe */
+    /* Classes de Layout e Estados de Jogo */
     .grade-telao-dinamica {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; padding: 2px; }}
     .mesa-container {{ background-color: #1e2622; border: 1px solid #3d4f45; border-radius: 8px; padding: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }}
     .mesa-header {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #3d4f45; padding-bottom: 2px; margin-bottom: 4px; font-weight: bold; color: #ffbf00; font-size: 0.85rem; }}
@@ -99,7 +99,11 @@ st.markdown(f"""
     .mesa-status-concluido {{ background-color: #1e5a34; color: #ffffff; padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; }}
     .mesa-corpo {{ display: flex; flex-direction: column; gap: 2px; }}
     .jogador-linha {{ display: flex; justify-content: space-between; padding: 2px 5px; border-radius: 4px; background-color: #151b18; font-size: 0.8rem; }}
-    .vencedor-destaque {{ background-color: #244b33 !important; border-left: 4px solid #28a745; font-weight: bold; }}
+    
+    /* Destaques visuais pós-jogo */
+    .vencedor-destaque {{ background-color: #194d2b !important; border-left: 4px solid #28a745; font-weight: bold; }}
+    .perdedor-destaque {{ background-color: #4d1919 !important; border-left: 4px solid #dc3545; opacity: 0.85; }}
+    
     .jogador-nome {{ color: #e0e0e0; }}
     .jogador-resultado {{ color: #a3cfb6; }}
 
@@ -126,7 +130,7 @@ st.sidebar.markdown(f"""
     <div class="dev-assinatura-container">
         <div class="dev-titulo">Engenharia de Software</div>
         <div class="dev-nome">🚀 {gerenciador_dados.NOME_CRIADOR}</div>
-        <div class="dev-tag">Plataforma Oficial de Competições</div>
+        <div class="dev-tag">Plataforma Oficial de Competitions</div>
     </div>
 """, unsafe_allow_html=True)
 
@@ -208,7 +212,7 @@ def injetar_cronometro_javascript(key_prefix="default"):
                 var minutos = Math.floor(segundosRestantes / 60);
                 var segundos = segundosRestantes % 60;
                 
-                var strMin = minutos < 10 ? "0" + minutes : minutes;
+                var strMin = minutos < 10 ? "0" + minutos : minutos;
                 var strSeg = segundos < 10 ? "0" + segundos : segundos;
                 
                 if (segundosRestantes < 300) {{
@@ -296,8 +300,17 @@ if modo_telao:
                     with col_alvo:
                         status_txt = "EM ANDAMENTO" if m.get('Status') == 'Pendente' else "CONCLUÍDO"
                         status_classe = "mesa-status-concluido" if m.get('Status') == 'Concluído' else "mesa-status-pendente"
-                        vencedor_j1 = "vencedor-destaque" if (m.get('Status') == 'Concluído' and int(m.get('SetsJ1', 0)) > int(m.get('SetsJ2', 0))) else ""
-                        vencedor_j2 = "vencedor-destaque" if (m.get('Status') == 'Concluído' and int(m.get('SetsJ2', 0)) > int(m.get('SetsJ1', 0))) else ""
+                        
+                        # Atribuição dinâmica de cores pós-resultado
+                        vencedor_j1 = ""
+                        vencedor_j2 = ""
+                        if m.get('Status') == 'Concluído':
+                            if int(m.get('SetsJ1', 0)) > int(m.get('SetsJ2', 0)):
+                                vencedor_j1 = "vencedor-destaque"
+                                vencedor_j2 = "perdedor-destaque"
+                            else:
+                                vencedor_j1 = "perdedor-destaque"
+                                vencedor_j2 = "vencedor-destaque"
                         
                         st.markdown(f"""
                         <div class="mesa-container">
@@ -477,8 +490,17 @@ else:
                     col_alvo = col_mesa1 if idx % 2 == 0 else col_mesa2
                     with col_alvo:
                         status_classe = "mesa-status-concluido" if m['Status'] == 'Concluído' else "mesa-status-pendente"
-                        vencedor_j1 = "vencedor-destaque" if (m['Status'] == 'Concluído' and int(m['SetsJ1']) > int(m['SetsJ2'])) else ""
-                        vencedor_j2 = "vencedor-destaque" if (m['Status'] == 'Concluído' and int(m['SetsJ2']) > int(m['SetsJ1'])) else ""
+                        
+                        # Atribuição dinâmica de cores pós-resultado para o painel de lançamento
+                        vencedor_j1 = ""
+                        vencedor_j2 = ""
+                        if m['Status'] == 'Concluído':
+                            if int(m['SetsJ1']) > int(m['SetsJ2']):
+                                vencedor_j1 = "vencedor-destaque"
+                                vencedor_j2 = "perdedor-destaque"
+                            else:
+                                vencedor_j1 = "perdedor-destaque"
+                                vencedor_j2 = "vencedor-destaque"
                         
                         st.markdown(f"""
                             <div class="mesa-container">
@@ -649,7 +671,7 @@ else:
                 st.info("🔒 **Inscrições Trancadas:** O torneio está ativo.")
                 st.markdown(f"### 🛡️ Cronômetro da Arena — Rodada {dados['RodadaAtual']}")
                 
-                # INJEÇÃO DO CRONÔMETRO JAVASCRIPT ISOLADO NO PAINEL DO ADMIN CONTRA RESETS Visuals
+                # INJEÇÃO DO CRONÔMETRO JAVASCRIPT ISOLADO NO PAINEL DO ADMIN CONTRA RESETS VISUAIS
                 injetar_cronometro_javascript(key_prefix="admin")
                 
                 restante_real, c_dados = obter_tempo_restante_dinamico()
