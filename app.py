@@ -876,7 +876,7 @@ else:
                 
                 col_adm1, col_adm2 = st.columns(2)
                 
-               with col_adm1:
+                with col_adm1:
                     # --- BOTÃO: LANÇAR MANUALLY NO HISTÓRICO (ESTRUTURA CORRIGIDA) ---
                     if st.button("🏆 Forçar Gravação do Pódio na Galeria", use_container_width=True, help="Registra os líderes atuais diretamente no histórico/galeria de forma manual"):
                         try:
