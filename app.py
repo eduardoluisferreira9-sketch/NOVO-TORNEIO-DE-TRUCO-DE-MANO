@@ -208,10 +208,10 @@ def injetar_cronometro_javascript(key_prefix="default"):
                     return;
                 }}
                 
-                var minutos = Math.floor(segundosRestantes / 60);
+                var minutes = Math.floor(segundosRestantes / 60);
                 var segundos = segundosRestantes % 60;
                 
-                var strMin = minutos < 10 ? "0" + minutos : minutos;
+                var strMin = minutes < 10 ? "0" + minutes : minutes;
                 var strSeg = segundos < 10 ? "0" + segundos : segundos;
                 
                 if (segundosRestantes < 300) {{
@@ -245,7 +245,7 @@ def exibir_podio_arena(lista_classificada):
     if not lista_classificada: return
     c1 = lista_classificada[0]['Nome'] if len(lista_classificada) > 0 else "---"
     c2 = lista_classificada[1]['Nome'] if len(lista_classificada) > 1 else "---"
-    c3 = lista_classificada[2]['Nome'] if len(lista_classificada) > 3 else "---"
+    c3 = lista_classificada[2]['Nome'] if len(lista_classificada) > 2 else "---"
     
     st.markdown(f"""
         <div style='display: flex; justify-content: space-around; background-color: #151b18; padding: 6px; border-radius: 8px; border: 1px solid #3d4f45; text-align: center; margin-bottom: 5px;'>
@@ -273,75 +273,77 @@ if modo_telao:
         injetar_cronometro_javascript(key_prefix="telao")
         
     if st.session_state.tela_telao == "jogos":
-        if 'RodadaAtual' in dados and 'Rodadas' in dados and len(dados['Rodadas']) > 0:
-            rodada_atual_num = dados['RodadaAtual']
-            rodada_atual = next((r for r in dados['Rodadas'] if r.get('Numero') == rodada_atual_num), None)
-            
-            if rodada_atual and 'Mesas' in rodada_atual:
-                mesas = rodada_atual.get('Mesas', [])
-                
-                MESAS_POR_PAGINA = 6
-                total_mesas = len(mesas)
-                total_paginas = (total_mesas + MESAS_POR_PAGINA - 1) // MESAS_POR_PAGINA
-                
-                if st.session_state.pagina_mesas >= total_paginas:
-                    st.session_state.pagina_mesas = 0
+        # CORREÇÃO DINÂMICA: Define as mesas baseado no estado do Torneio (Mata-Mata ou Suíço)
+        if dados.get('Status') == 'Mata-Mata' or dados.get('Fase') == 'Mata-Mata':
+            fase_mata = dados.get('FasesMataMata', {})
+            mesas = fase_mata.get('Mesas', [])
+        else:
+            mesas = []
+            if 'RodadaAtual' in dados and 'Rodadas' in dados and len(dados['Rodadas']) > 0:
+                rodada_atual_num = dados['RodadaAtual']
+                rodada_atual = next((r for r in dados['Rodadas'] if r.get('Numero') == rodada_atual_num), None)
+                if rodada_atual and 'Mesas' in rodada_atual:
+                    mesas = rodada_atual.get('Mesas', [])
                     
-                pag_atual = st.session_state.pagina_mesas
-                mesas_visiveis = mesas[pag_atual * MESAS_POR_PAGINA : (pag_atual + 1) * MESAS_POR_PAGINA]
+        if mesas:
+            MESAS_POR_PAGINA = 6
+            total_mesas = len(mesas)
+            total_paginas = (total_mesas + MESAS_POR_PAGINA - 1) // MESAS_POR_PAGINA
+            
+            if st.session_state.pagina_mesas >= total_paginas:
+                st.session_state.pagina_mesas = 0
                 
-                st.markdown(f"<h4 style='color: #ffbf00; margin-top:0; margin-bottom:4px; text-align:center; font-size:1rem;'>⚔️ JOGOS EM EXECUÇÃO (PÁG. {pag_atual+1}/{total_paginas})</h4>", unsafe_allow_html=True)
-                
-                col_t1, col_t2 = st.columns(2)
-                for idx, m in enumerate(mesas_visiveis):
-                    col_alvo = col_t1 if idx % 2 == 0 else col_t2
-                    with col_alvo:
-                        status_txt = "EM ANDAMENTO" if m.get('Status') == 'Pendente' else "CONCLUÍDO"
-                        status_classe = "mesa-status-concluido" if m.get('Status') == 'Concluído' else "mesa-status-pendente"
-                        
-                        vencedor_j1 = ""
-                        vencedor_j2 = ""
-                        if m.get('Status') == 'Concluído':
-                            if int(m.get('SetsJ1', 0)) > int(m.get('SetsJ2', 0)):
-                                vencedor_j1 = "vencedor-destaque"
-                                vencedor_j2 = "perdedor-destaque"
-                            else:
-                                vencedor_j1 = "perdedor-destaque"
-                                vencedor_j2 = "vencedor-destaque"
-                        
-                        st.markdown(f"""
-                        <div class="mesa-container">
-                            <div class="mesa-header">
-                                <span>🚨 Mesa {m.get('Mesa')}</span>
-                                <span class="{status_classe}">{status_txt}</span>
+            pag_atual = st.session_state.pagina_mesas
+            mesas_visiveis = mesas[pag_atual * MESAS_POR_PAGINA : (pag_atual + 1) * MESAS_POR_PAGINA]
+            
+            st.markdown(f"<h4 style='color: #ffbf00; margin-top:0; margin-bottom:4px; text-align:center; font-size:1rem;'>⚔️ JOGOS EM EXECUÇÃO (PÁG. {pag_atual+1}/{total_paginas})</h4>", unsafe_allow_html=True)
+            
+            col_t1, col_t2 = st.columns(2)
+            for idx, m in enumerate(mesas_visiveis):
+                col_alvo = col_t1 if idx % 2 == 0 else col_t2
+                with col_alvo:
+                    status_txt = "EM ANDAMENTO" if m.get('Status') == 'Pendente' else "CONCLUÍDO"
+                    status_classe = "mesa-status-concluido" if m.get('Status') == 'Concluído' else "mesa-status-pendente"
+                    
+                    vencedor_j1 = ""
+                    vencedor_j2 = ""
+                    if m.get('Status') == 'Concluído':
+                        if int(m.get('SetsJ1', 0)) > int(m.get('SetsJ2', 0)):
+                            vencedor_j1 = "vencedor-destaque"
+                            vencedor_j2 = "perdedor-destaque"
+                        else:
+                            vencedor_j1 = "perdedor-destaque"
+                            vencedor_j2 = "vencedor-destaque"
+                    
+                    st.markdown(f"""
+                    <div class="mesa-container">
+                        <div class="mesa-header">
+                            <span>🚨 Mesa {m.get('Mesa')}</span>
+                            <span class="{status_classe}">{status_txt}</span>
+                        </div>
+                        <div class="mesa-corpo">
+                            <div class="jogador-linha {vencedor_j1}">
+                                <span class="jogador-nome">👤 {m.get('Jogador1')}</span>
+                                <span class="jogador-resultado">{m.get('SetsJ1', 0)}S ({m.get('TentosJ1', 0)}T)</span>
                             </div>
-                            <div class="mesa-corpo">
-                                <div class="jogador-linha {vencedor_j1}">
-                                    <span class="jogador-nome">👤 {m.get('Jogador1')}</span>
-                                    <span class="jogador-resultado">{m.get('SetsJ1', 0)}S ({m.get('TentosJ1', 0)}T)</span>
-                                </div>
-                                <div class="jogador-linha {vencedor_j2}">
-                                    <span class="jogador-nome">👤 {m.get('Jogador2')}</span>
-                                    <span class="jogador-resultado">{m.get('SetsJ2', 0)}S ({m.get('TentosJ2', 0)}T)</span>
-                                </div>
+                            <div class="jogador-linha {vencedor_j2}">
+                                <span class="jogador-nome">👤 {m.get('Jogador2')}</span>
+                                <span class="jogador-resultado">{m.get('SetsJ2', 0)}S ({m.get('TentosJ2', 0)}T)</span>
                             </div>
                         </div>
-                        """, unsafe_allow_html=True)
-                
-                time.sleep(10)
-                st.session_state.pagina_mesas += 1
-                if st.session_state.pagina_mesas >= total_paginas:
-                    st.session_state.tela_telao = "classificacao"
-                st.rerun()
-            else:
-                st.info("Nenhum jogo ativo cadastrado.")
-                time.sleep(4)
-                st.rerun()
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+            time.sleep(10)
+            st.session_state.pagina_mesas += 1
+            if st.session_state.pagina_mesas >= total_paginas:
+                st.session_state.tela_telao = "classificacao"
+            st.rerun()
         else:
-            st.info("Aguardando chaves da rodada.")
+            st.info("Nenhum jogo ativo cadastrado ou aguardando chaves.")
             time.sleep(4)
             st.rerun()
-        
+            
     else:
         st.markdown("<h4 style='color: #ffbf00; margin-top:0; margin-bottom:4px; text-align:center; font-size:1rem;'>📊 CLASSIFICAÇÃO GERAL PARCIAL DO TORNEIO</h4>", unsafe_allow_html=True)
         if dados.get('Jogadores'):
@@ -382,7 +384,7 @@ else:
         if st.session_state.perfil_usuario == "Administrador":
             abas_lista.append("⚙️ Painel Inicial")
             
-    if dados['Status'] != 'Configuração' and len(dados.get('Rodadas', [])) > 0:
+    if dados['Status'] != 'Configuração':
         abas_lista.append("⚔️ Lançar Mesas") # Única central operacional pós-start
         
     abas_lista.append("🏆 Galeria de Campeões")
@@ -414,7 +416,7 @@ else:
                 st.info("Nenhum competidor inscrito até o momento.")
     aba_index += 1
 
-    # --- 2. ABA: INSCRIÇÃO ONLINE (SÓ APRECE EM CONFIGURAÇÃO) ---
+    # --- 2. ABA: INSCRIÇÃO ONLINE (SÓ APARECE EM CONFIGURAÇÃO) ---
     if "📝 Inscrição Online" in abas_lista:
         with abas_criadas[aba_index]:
             st.markdown("<h2 style='color: #ffbf00 !important;'>📝 Formulário de Inscrição Oficial</h2>", unsafe_allow_html=True)
@@ -431,7 +433,7 @@ else:
                             st.warning("Jogador/Dupla já está na lista!")
                         else:
                             entidade_final = entidade_atleta if entidade_atleta else "SEM ENTIDADE"
-                            dados['Jogadores'].append({'Nome': name_atleta, 'Entidade': entidade_final})
+                            dados['Jogadores'].append({'Nome': name_atleta, 'Entidade': entity_final})
                             gerenciador_dados.salvar_dados(dados)
                             st.success("Inscrição efetuada com sucesso!")
                             st.rerun()
@@ -477,7 +479,7 @@ else:
                         nomes_existentes = [j['Nome'] for j in dados.get('Jogadores', [])]
                         for linha in linhas:
                             if linha not in nomes_existentes:
-                                dados['Jogadores'].append({'Nome': linha, 'Entidade': entity_lote})
+                                dados['Jogadores'].append({'Nome': linha, 'Entidade': entidade_lote}) # CORRIGIDO: entity_lote -> entidade_lote
                                 nomes_existentes.append(linha)
                                 cadastrados_agora += 1
                         if cadastrados_agora > 0:
@@ -539,36 +541,39 @@ else:
             # TOPO: CRONÔMETRO DO TORNEIO (Sempre Visível)
             injetar_cronometro_javascript(key_prefix="lancador")
             
-            rodada_atual_num = dados['RodadaAtual']
-            rodadas_lista = dados.get('Rodadas', [])
-            rodada_atual = next((r for r in rodadas_lista if r['Numero'] == rodada_atual_num), None)
+            # CORREÇÃO DA BUSCA: Decide se renderiza mesas do Mata-Mata ou do Suíço clássico
+            if dados.get('Status') == 'Mata-Mata' or dados.get('Fase') == 'Mata-Mata':
+                fase_mata = dados.get('FasesMataMata', {})
+                mesas = fase_mata.get('Mesas', [])
+                st.markdown(f"<h2 style='color: #ffbf00 !important;'>⚔️ Gerenciamento da Fase Eliminatória (Mata-Mata)</h2>", unsafe_allow_html=True)
+            else:
+                rodada_atual_num = dados['RodadaAtual']
+                rodadas_lista = dados.get('Rodadas', [])
+                rodada_atual = next((r for r in rodadas_lista if r['Numero'] == rodada_atual_num), None)
+                mesas = rodada_atual.get('Mesas', []) if rodada_atual else []
+                st.markdown(f"<h2 style='color: #ffbf00 !important;'>⚔️ Gerenciamento da {dados['RodadaAtual']}ª Rodada</h2>", unsafe_allow_html=True)
             
-            if rodada_atual:
+            if mesas:
                 col_tit, col_imp = st.columns([3, 1])
-                with col_tit: 
-                    st.markdown(f"<h2 style='color: #ffbf00 !important;'>⚔️ Gerenciamento da {rodada_atual_num}ª Rodada</h2>", unsafe_allow_html=True)
                 with col_imp:
-                    st.markdown("<br>", unsafe_allow_html=True)
                     if st.button("🖨️ IMPRIMIR SÚMULAS (ELGIN I9)", use_container_width=True):
                         st.components.v1.html("<script>window.print();</script>", height=0, width=0)
-                
-                mesas = rodada_atual.get('Mesas', [])
                 
                 # Renderizador estruturado Oculto para Impressora Térmica de 80mm
                 html_impressao = f"<div class='secao-impressao-sumulas'>"
                 for m in mesas:
-                    if m['Jogador1'] == "CHAPÉU" or m['Jogador2'] == "CHAPÉU": continue 
+                    if m.get('Jogador1') == "CHAPÉU" or m.get('Jogador2') == "CHAPÉU": continue 
                     html_impressao += f"""
                     <div class='cartao-sumula-print'>
                         <div style='text-align:center; font-weight:bold; font-size:11pt; border-bottom:1px solid #000;'>{dados.get('NomeTorneio', 'TORNEIO DE TRUCO')}</div>
                         <div style='display:flex; justify-content:space-between; margin-top:5px; font-weight:bold; font-size:11pt;'>
-                            <span>🎴 MESA {m['Mesa']}</span><span>{rodada_atual_num}a RODADA</span>
+                            <span>🎴 MESA {m.get('Mesa')}</span><span>RODADA ATUAL</span>
                         </div>
                         <table class='tabela-sumula-print'>
                             <thead><tr><th style='width: 50%; text-align:left;'>COMPETIDOR</th><th style='width:16%;'>SET</th><th style='width:16%;'>TT</th><th style='width:18%;'>FLOR</th></tr></thead>
                             <tbody>
-                                <tr><td class='texto-dupla-print'>{m['Jogador1']}</td><td>[ &nbsp;]</td><td>[ &nbsp; ]</td><td>[ &nbsp; ]</td></tr>
-                                <tr><td class='texto-dupla-print'>{m['Jogador2']}</td><td>[ &nbsp;]</td><td>[ &nbsp; ]</td><td>[ &nbsp; ]</td></tr>
+                                <tr><td class='texto-dupla-print'>{m.get('Jogador1')}</td><td>[ &nbsp;]</td><td>[ &nbsp; ]</td><td>[ &nbsp; ]</td></tr>
+                                <tr><td class='texto-dupla-print'>{m.get('Jogador2')}</td><td>[ &nbsp;]</td><td>[ &nbsp; ]</td><td>[ &nbsp; ]</td></tr>
                             </tbody>
                         </table>
                         <div style='margin-top:12px; font-size:8pt; font-weight:bold; text-align:left; line-height:1.4;'>✍️ Ass: _______________________________<br>Juiz: _________________</div>
@@ -582,12 +587,12 @@ else:
                 for idx, m in enumerate(mesas):
                     col_alvo = col_mesa1 if idx % 2 == 0 else col_mesa2
                     with col_alvo:
-                        status_classe = "mesa-status-concluido" if m['Status'] == 'Concluído' else "mesa-status-pendente"
+                        status_classe = "mesa-status-concluido" if m.get('Status') == 'Concluído' else "mesa-status-pendente"
                         
                         vencedor_j1 = ""
                         vencedor_j2 = ""
-                        if m['Status'] == 'Concluído':
-                            if int(m['SetsJ1']) > int(m['SetsJ2']):
+                        if m.get('Status') == 'Concluído':
+                            if int(m.get('SetsJ1', 0)) > int(m.get('SetsJ2', 0)):
                                 vencedor_j1 = "vencedor-destaque"
                                 vencedor_j2 = "perdedor-destaque"
                             else:
@@ -597,34 +602,34 @@ else:
                         st.markdown(f"""
                             <div class="mesa-container">
                                 <div class="mesa-header">
-                                    <span>🎴 Mesa {m['Mesa']}</span>
-                                    <span class="{status_classe}">{m['Status'].upper()}</span>
+                                    <span>🎴 Mesa {m.get('Mesa')}</span>
+                                    <span class="{status_classe}">{m.get('Status', '').upper()}</span>
                                 </div>
                                 <div class="mesa-corpo">
                                     <div class="jogador-linha {vencedor_j1}">
-                                        <span class="jogador-nome">👤 {m['Jogador1']}</span>
-                                        <span class="jogador-resultado">{m['SetsJ1']} Set(s) ({m['TentosJ1']} T / {m['FloresJ1']} F)</span>
+                                        <span class="jogador-nome">👤 {m.get('Jogador1')}</span>
+                                        <span class="jogador-resultado">{m.get('SetsJ1', 0)} Set(s) ({m.get('TentosJ1', 0)} T / {m.get('FloresJ1', 0)} F)</span>
                                     </div>
                                     <div class="jogador-linha {vencedor_j2}">
-                                        <span class="jogador-nome">👤 {m['Jogador2']}</span>
-                                        <span class="jogador-resultado">{m['SetsJ2']} Set(s) ({m['TentosJ2']} T / {m['FloresJ2']} F)</span>
+                                        <span class="jogador-nome">👤 {m.get('Jogador2')}</span>
+                                        <span class="jogador-resultado">{m.get('SetsJ2', 0)} Set(s) ({m.get('TentosJ2', 0)} T / {m.get('FloresJ2', 0)} F)</span>
                                     </div>
                                 </div>
                             </div>
                         """, unsafe_allow_html=True)
                         
-                        if m['Jogador1'] == "CHAPÉU" or m['Jogador2'] == "CHAPÉU": 
+                        if m.get('Jogador1') == "CHAPÉU" or m.get('Jogador2') == "CHAPÉU": 
                             continue
                             
                         # FORMULÁRIO OPERACIONAL DE CADA MESA
-                        with st.expander(f"📝 Lançar Placar - Mesa {m['Mesa']}"):
-                            form_key = f"form_mesa_{m['Mesa']}_{rodada_atual_num}"
+                        with st.expander(f"📝 Lançar Placar - Mesa {m.get('Mesa')}"):
+                            form_key = f"form_mesa_{m.get('Mesa')}_{dados['RodadaAtual']}"
                             opcoes_sets = [
                                 "Aguardando...", 
-                                f"{m['Jogador1']} 2 x 0 (Ganha 3x0 - 72 Tentos)", 
-                                f"{m['Jogador2']} 2 x 0 (Ganha 3x0 - 72 Tentos)", 
-                                f"{m['Jogador1']} 2 x 1", 
-                                f"{m['Jogador2']} 2 x 1"
+                                f"{m.get('Jogador1')} 2 x 0 (Ganha 3x0 - 72 Tentos)", 
+                                f"{m.get('Jogador2')} 2 x 0 (Ganha 3x0 - 72 Tentos)", 
+                                f"{m.get('Jogador1')} 2 x 1", 
+                                f"{m.get('Jogador2')} 2 x 1"
                             ]
                             escolha_set = st.selectbox("Qual o placar em Sets?", opcoes_sets, key=f"sel_{form_key}")
                             
@@ -632,31 +637,36 @@ else:
                             
                             if escolha_set != "Aguardando...":
                                 if "2 x 0" in escolha_set:
-                                    if escolha_set.startswith(m['Jogador1']):
-                                        st.success(f"🏆 {m['Jogador1']} ganha por 3x0 (72 Tentos fixos).")
+                                    if escolha_set.startswith(m.get('Jogador1')):
+                                        st.success(f"🏆 {m.get('Jogador1')} ganha por 3x0 (72 Tentos fixos).")
                                         t1_int = 72
-                                        t2_int = st.number_input(f"Tentos feitos por {m['Jogador2']} (Máximo 46):", min_value=0, max_value=46, value=0, key=f"t2_{form_key}")
+                                        t2_int = st.number_input(f"Tentos feitos por {m.get('Jogador2')} (Máximo 46):", min_value=0, max_value=46, value=0, key=f"t2_{form_key}")
                                     else:
-                                        st.success(f"🏆 {m['Jogador2']} ganha por 3x0 (72 Tentos fixos).")
+                                        st.success(f"🏆 {m.get('Jogador2')} ganha por 3x0 (72 Tentos fixos).")
                                         t2_int = 72
-                                        t1_int = st.number_input(f"Tentos feitos por {m['Jogador1']} (Máximo 46):", min_value=0, max_value=46, value=0, key=f"t1_{form_key}")
+                                        t1_int = st.number_input(f"Tentos feitos por {m.get('Jogador1')} (Máximo 46):", min_value=0, max_value=46, value=0, key=f"t1_{form_key}")
                                         
                                 elif "2 x 1" in escolha_set:
                                     col_t1, col_t2 = st.columns(2)
-                                    with col_t1: t1_raw = st.text_input(f"Tentos de {m['Jogador1']}", value=str(m.get('TentosJ1', 0)), key=f"t1_{form_key}")
-                                    with col_t2: t2_raw = st.text_input(f"Tentos de {m['Jogador2']}", value=str(m.get('TentosJ2', 0)), key=f"t2_{form_key}")
+                                    with col_t1: t1_raw = st.text_input(f"Tentos de {m.get('Jogador1')}", value=str(m.get('TentosJ1', 0)), key=f"t1_{form_key}")
+                                    with col_t2: t2_raw = st.text_input(f"Tentos de {m.get('Jogador2')}", value=str(m.get('TentosJ2', 0)), key=f"t2_{form_key}")
                                     try:
                                         t1_int, t2_int = int(t1_raw), int(t2_raw)
                                     except:
                                         t1_int, t2_int = 0, 0
                             
                             col_f1, col_f2 = st.columns(2)
-                            with col_f1: f1_num = st.number_input(f"🌸 Flores de {m['Jogador1']}", min_value=0, value=int(m.get('FloresJ1', 0)), step=1, key=f"f1_{form_key}")
-                            with col_f2: f2_num = st.number_input(f"🌸 Flores de {m['Jogador2']}", min_value=0, value=int(m.get('FloresJ2', 0)), step=1, key=f"f2_{form_key}")
+                            with col_f1: f1_num = st.number_input(f"🌸 Flores de {m.get('Jogador1')}", min_value=0, value=int(m.get('FloresJ1', 0)), step=1, key=f"f1_{form_key}")
+                            with col_f2: f2_num = st.number_input(f"🌸 Flores de {m.get('Jogador2')}", min_value=0, value=int(m.get('FloresJ2', 0)), step=1, key=f"f2_{form_key}")
                             
                             if st.button("Confirmar e Salvar Mesa", key=f"btn_{form_key}"):
                                 if escolha_set != "Aguardando...":
-                                    alvo = dados['Rodadas'][dados['RodadaAtual'] - 1]['Mesas'][idx]
+                                    # Salva a mesa de forma segura dependendo do nó estrutural do Torneio
+                                    if dados.get('Status') == 'Mata-Mata' or dados.get('Fase') == 'Mata-Mata':
+                                        alvo = dados['FasesMataMata']['Mesas'][idx]
+                                    else:
+                                        alvo = dados['Rodadas'][dados['RodadaAtual'] - 1]['Mesas'][idx]
+                                        
                                     alvo['Status'] = 'Concluído'
                                     alvo['FloresJ1'] = f1_num
                                     alvo['FloresJ2'] = f2_num
@@ -678,13 +688,13 @@ else:
                                         dados['Cronometro']['TimestampInicio'] = time.time()
                                         
                                     gerenciador_dados.salvar_dados(dados)
-                                    st.success(f"Mesa {m['Mesa']} Lançada com Sucesso!")
+                                    st.success(f"Mesa {m.get('Mesa')} Lançada com Sucesso!")
                                     st.rerun()
             else:
-                st.info("Nenhum jogo ativo nesta rodada.")
+                st.info("Nenhum jogo ativo cadastrado no sistema para esta fase.")
 
             # ==================================================================
-            # ⚙️ RODAPÉ: PAINEL DO DIRETOR INTEGADO (EXCLUSIVO ADMINISTRADOR)
+            # ⚙️ RODAPÉ: PAINEL DO DIRETOR INTEGRADO (EXCLUSIVO ADMINISTRADOR)
             # ==================================================================
             if st.session_state.perfil_usuario == "Administrador":
                 st.markdown("<br><hr>", unsafe_allow_html=True)
@@ -720,15 +730,15 @@ else:
                 
                 # VERIFICAÇÃO DE CONCLUSÃO DE TODAS AS MESAS
                 todas_concluidas = True
-                if rodada_atual:
-                    for m in rodada_atual.get('Mesas', []):
-                        if m['Status'] != 'Concluído': 
+                if mesas:
+                    for m in mesas:
+                        if m.get('Status') != 'Concluído': 
                             todas_concluidas = False
                 
                 # LÓGICA DE TRANSIÇÃO E CONTROLE DAS RODADAS
-                if todas_concluidas:
+                if todas_concluidas and mesas:
                     # REGRA: SE CHEGOU NA ÚLTIMA RODADA DO SUIÇO (RODADA 5)
-                    if dados['RodadaAtual'] >= 5:
+                    if dados.get('Status') != 'Mata-Mata' and dados['RodadaAtual'] >= 5:
                         st.success("🏁 **Rodada 5 do Sistema Suíço Concluída!** O corte para o Mata-Mata está liberado.")
                         
                         tamanho_mata_mata = st.selectbox(
@@ -738,13 +748,14 @@ else:
                         )
                         
                         if st.button("🏆 Iniciar Fase Eliminatória (Mata-Mata) 🔥", type="primary", use_container_width=True):
-                            # Mapeamento do seletor para salvar no estado de chaves
                             dados['Status'] = 'Mata-Mata'
                             dados['RodadaAtual'] += 1
-                            # Aqui você pode chamar a lógica do seu motor_truco para gerar o mata-mata correspondente
+                            # Aqui o motor gera as chaves dinâmicas baseadas na seleção
                             gerenciador_dados.salvar_dados(dados)
                             st.success("Playoffs Gerados!")
                             st.rerun()
+                    elif dados.get('Status') == 'Mata-Mata':
+                        st.success("🏆 Todas as mesas eliminatórias da rodada foram concluídas!")
                     else:
                         # PROGRESSÃO PADRÃO DO SUÍÇO (BLOQUEADO EM 5)
                         if st.button("🏁 CONCLUIR RODADA E RODAR NOVO EMPARELHAMENTO", type="primary", use_container_width=True):
