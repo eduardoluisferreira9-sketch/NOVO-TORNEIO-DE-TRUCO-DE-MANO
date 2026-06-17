@@ -266,53 +266,90 @@ def gerar_fase_eliminatoria(dados, tamanho_mata):
     # 💥 RETORNO CORRIGIDO: Agora devolve o objeto modificado para o app.py salvar
     return dados
 
-
 def avancar_estagio_eliminatorio(dados):
     """
-    Pega os vencedores da fase atual do Mata-Mata e gera o cruzamento da próxima etapa.
-    Mantém a ordem sequencial dos vencedores das chaves estabelecidas.
+    Pega os vencedores da fase atual do Mata-Mata e gera a próxima etapa.
+    Adicionada a disputa de 3º lugar junto com a Grande Final.
     """
     fase_atual = dados['FasesMataMata'].get('FaseAtual', '')
     mesas_anteriores = dados['FasesMataMata'].get('Mesas', [])
     
-    # Coleta todos os vencedores na ordem das mesas
+    # Coleta vencedores e perdedores
     vencedores = []
+    perdedores = []
     for m in mesas_anteriores:
         if m['Status'] == 'Concluído':
             if int(m['SetsJ1']) > int(m['SetsJ2']):
                 vencedores.append(m['Jogador1'])
+                perdedores.append(m['Jogador2'])
             else:
                 vencedores.append(m['Jogador2'])
+                perdedores.append(m['Jogador1'])
         else:
-            # Salvaguarda para não deixar passar mesas em aberto
-            return dados
+            return dados # Bloqueia se houver mesa aberta
             
-    # Define a próxima fase do torneio
+    # --- CENÁRIO A: ACABOU A SEMIFINAL -> GERA FINAL E 3º LUGAR ---
+    if fase_atual == "Semifinal":
+        novas_mesas = [
+            {
+                'Mesa': 1, 'Jogador1': vencedores[0], 'Jogador2': vencedores[1],
+                'SetsJ1': 0, 'SetsJ2': 0, 'TentosJ1': 0, 'TentosJ2': 0, 'FloresJ1': 0, 'FloresJ2': 0, 'Status': 'Pendente'
+            },
+            {
+                'Mesa': 2, 'Jogador1': perdedores[0], 'Jogador2': perdedores[1],
+                'SetsJ1': 0, 'SetsJ2': 0, 'TentosJ1': 0, 'TentosJ2': 0, 'FloresJ1': 0, 'FloresJ2': 0, 'Status': 'Pendente'
+            }
+        ]
+        dados['FasesMataMata'] = {
+            'FaseAtual': 'Grande Final & 3º Lugar',
+            'Status': 'Em Andamento',
+            'Mesas': novas_mesas
+        }
+        return dados
+
+    # --- CENÁRIO B: ACABOU A GRANDE FINAL -> FINALIZA O TORNEIO ---
+    if fase_atual == 'Grande Final & 3º Lugar':
+        mesa_final = next((m for m in mesas_anteriores if m['Mesa'] == 1), None)
+        mesa_terceiro = next((m for m in mesas_anteriores if m['Mesa'] == 2), None)
+        
+        if mesa_final and mesa_terceiro:
+            # Define 1º e 2º
+            if int(mesa_final['SetsJ1']) > int(mesa_final['SetsJ2']):
+                campeao, vice = mesa_final['Jogador1'], mesa_final['Jogador2']
+            else:
+                campeao, vice = mesa_final['Jogador2'], mesa_final['Jogador1']
+                
+            # Define 3º
+            if int(mesa_terceiro['SetsJ1']) > int(mesa_terceiro['SetsJ2']):
+                terceiro = mesa_terceiro['Jogador1']
+            else:
+                terceiro = mesa_terceiro['Jogador2']
+            
+            # Guarda os campeões temporariamente para o app.py salvar na galeria
+            dados['PodioFinal'] = {'Campeao': campeao, 'Vice': vice, 'Terceiro': terceiro}
+            dados['FasesMataMata']['Status'] = 'Finalizado'
+            dados['Status'] = 'Finalizado'
+            dados['Fase'] = 'Finalizado'
+        return dados
+
+    # --- PROGRESSÃO PADRÃO PARA OUTRAS FASES (OITAVAS, QUARTAS...) ---
     proximas_etapas = {
         "32-Avos": ("Dezesseis-Avos", 16),
         "Dezesseis-Avos": ("Oitavas de Final", 8),
         "Oitavas de Final": ("Quartas de Final", 4),
-        "Quartas de Final": ("Semifinal", 2),
-        "Semifinal": ("Grande Final", 1)
+        "Quartas de Final": ("Semifinal", 2)
     }
     
     if fase_atual not in proximas_etapas:
-        if fase_atual == "Grande Final" or fase_atual == "Semifinal" and len(vencedores) == 1:
-            dados['FasesMataMata']['Status'] = 'Finalizado'
-            dados['Status'] = 'Finalizado'
-            return dados
         return dados
         
-    proximo_nome, total_mesas = proximas_etapas[fase_atual]
-    
-    # Monta os novos confrontos pegando os vencedores em sequência (Mesa 1 vs Mesa 2, etc)
+    proximo_nome, _ = proximas_etapas[fase_atual]
     novas_mesas = []
     mesa_id = 1
     
     for i in range(0, len(vencedores), 2):
         j1 = vencedores[i]
         j2 = vencedores[i+1] if (i+1) < len(vencedores) else "FOLGA_WO"
-        
         status_inicial = 'Pendente'
         sets_j1, sets_j2, tentos_j1, tentos_j2 = 0, 0, 0, 0
         
@@ -321,22 +358,12 @@ def avancar_estagio_eliminatorio(dados):
             sets_j1, tentos_j1 = 2, 72
             
         novas_mesas.append({
-            'Mesa': mesa_id,
-            'Jogador1': j1, 'Jogador2': j2,
-            'SetsJ1': sets_j1, 'SetsJ2': sets_j2,
-            'TentosJ1': tentos_j1, 'TentosJ2': tentos_j2,
-            'FloresJ1': 0, 'FloresJ2': 0,
-            'Status': status_inicial
+            'Mesa': mesa_id, 'Jogador1': j1, 'Jogador2': j2,
+            'SetsJ1': sets_j1, 'SetsJ2': sets_j2, 'TentosJ1': tentos_j1, 'TentosJ2': tentos_j2, 'FloresJ1': 0, 'FloresJ2': 0, 'Status': status_inicial
         })
         mesa_id += 1
         
     dados['FasesMataMata'] = {
-        'FaseAtual': proximo_nome,
-        'Status': 'Em Andamento',
-        'Mesas': novas_mesas
+        'FaseAtual': proximo_nome, 'Status': 'Em Andamento', 'Mesas': novas_mesas
     }
-    dados['Fase'] = 'Mata-Mata'
-    dados['Status'] = 'Mata-Mata'
-    
-    # 💥 RETORNO CORRIGIDO
     return dados
