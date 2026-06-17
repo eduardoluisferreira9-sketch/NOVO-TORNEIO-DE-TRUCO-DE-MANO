@@ -18,7 +18,7 @@ def processar_classificacao(dados):
         
     historico_confrontos = {j['Nome']: [] for j in jogadores}
     
-    # Computa os resultados das mesas concluídas
+    # Computa os resultados das mesas concluídas do Suíço (Fase Classificatória)
     for r in rodadas:
         for m in r.get('Mesas', []):
             if m.get('Status') == 'Concluído':
@@ -89,8 +89,12 @@ def processar_classificacao(dados):
 def gerar_rodada_suica(dados, numero_rodada):
     """
     Realiza o sorteio ALEATÓRIO evitando repetição de jogos e confrontos da mesma entidade.
-    Rebatizada para fins de compatibilidade estrutural com o app.py.
+    TRAVA AUTOMÁTICA EM 5 RODADAS MÁXIMAS.
     """
+    # 🆕 Trava de segurança: Se já passou de 5, bloqueia geração automática do Suíço
+    if numero_rodada > 5:
+        return None
+
     jogadores_cadastrados = dados.get('Jogadores', [])
     if not jogadores_cadastrados:
         return None
@@ -189,14 +193,140 @@ def gerar_rodada_suica(dados, numero_rodada):
             m['Status'] = 'Concluído'
             if m['Jogador1'] == "CHAPÉU":
                 m['SetsJ1'], m['SetsJ2'] = 0, 2
-                m['TentosJ1'], m['TentosJ2'] = 0, 24
+                m['TentosJ1'], m['TentosJ2'] = 0, 72  # Alinhado com a nova regra de 3x0 simulado
             else:
                 m['SetsJ1'], m['SetsJ2'] = 2, 0
-                m['TentosJ1'], m['TentosJ2'] = 24, 0
+                m['TentosJ1'], m['TentosJ2'] = 72, 0
 
-    # Retorna o dicionário estruturado para o app.py gerenciar a persistência
     return {
         'Numero': numero_rodada,
         'Status': 'Em Andamento',
         'Mesas': novas_mesas
     }
+
+# 🆕 NOVAS FUNÇÕES ADICIONADAS PARA SUPORTE AO MATA-MATA
+
+def iniciar_mata_mata(dados, tamanho_mata):
+    """
+    Pega os top 'tamanho_mata' (32, 16, 8, 4) da tabela de classificação oficial
+    e gera a primeira rodada eliminatória seguindo o cruzamento Olímpico Puro:
+    (1º vs Último, 2º vs Penúltimo...)
+    """
+    classificacao = processar_classificacao(dados)
+    
+    # Garante que temos competidores suficientes
+    vagas = int(tamanho_mata)
+    classificados = [c['Nome'] for c in classificacao[:vagas]]
+    
+    # Preenche com "W.O." se faltar gente para fechar a grade (Ex: escolheu 32 mas só tem 28)
+    while len(classificados) < vagas:
+        classificados.append("FOLGA_WO")
+        
+    # Define o nome legível da fase com base no tamanho inicial escolhido
+    nomes_fases = {32: "32-Avos", 16: "Oitavas de Final", 8: "Quartas de Final", 4: "Semifinal"}
+    nome_fase_atual = nomes_fases.get(vagas, f"Mata-{vagas}")
+    
+    mesas_mata = []
+    mesa_id = 1
+    
+    # Cruzamento Olímpico: Espelhamento (i vs len-1-i)
+    for i in range(vagas // 2):
+        j1 = classificados[i]
+        j2 = classificados[len(classificados) - 1 - i]
+        
+        status_inicial = 'Pendente'
+        sets_j1, sets_j2, tentos_j1, tentos_j2 = 0, 0, 0, 0
+        
+        # Caso cruze com um competidor fantasma da folga, passa automático
+        if j2 == "FOLGA_WO":
+            status_inicial = 'Concluído'
+            sets_j1, tentos_j1 = 2, 72
+            
+        mesas_mata.append({
+            'Mesa': mesa_id,
+            'Jogador1': j1, 'Jogador2': j2,
+            'SetsJ1': sets_j1, 'SetsJ2': sets_j2,
+            'TentosJ1': tentos_j1, 'TentosJ2': tentos_j2,
+            'FloresJ1': 0, 'FloresJ2': 0,
+            'Status': status_inicial
+        })
+        mesa_id += 1
+        
+    # Inicializa ou limpa a estrutura de chaves do Mata-Mata dentro dos dados globais
+    dados['FasesMataMata'] = {
+        'FaseAtual': nome_fase_atual,
+        'Status': 'Em Andamento',
+        'Mesas': mesas_mata
+    }
+    dados['Fase'] = 'Mata-Mata'
+    return True
+
+def avancar_fase_matamata(dados):
+    """
+    Pega os vencedores da fase atual do Mata-Mata e gera o cruzamento da próxima etapa.
+    Mantém a ordem sequencial dos vencedores das chaves estabelecidas.
+    """
+    fase_atual = dados['FasesMataMata'].get('FaseAtual', '')
+    mesas_anteriores = dados['FasesMataMata'].get('Mesas', [])
+    
+    # Coleta todos os vencedores na ordem das mesas
+    vencedores = []
+    for m in mesas_anteriores:
+        if m['Status'] == 'Concluído':
+            if m['SetsJ1'] > m['SetsJ2']:
+                vencedores.append(m['Jogador1'])
+            else:
+                vencedores.append(m['Jogador2'])
+        else:
+            # Salvaguarda para não deixar passar mesas em aberto
+            return False
+            
+    # Define a próxima fase do torneio
+    proximas_etapas = {
+        "32-Avos": ("Dezesseis-Avos", 16),
+        "Dezesseis-Avos": ("Oitavas de Final", 8),
+        "Oitavas de Final": ("Quartas de Final", 4),
+        "Quartas de Final": ("Semifinal", 2),
+        "Semifinal": ("Grande Final", 1)
+    }
+    
+    if fase_atual not in proximas_etapas:
+        if fase_atual == "Grande Final":
+            dados['FasesMataMata']['Status'] = 'Finalizado'
+            dados['Status'] = 'Finalizado'
+            return True
+        return False
+        
+    proximo_nome, total_mesas = proximas_etapas[fase_atual]
+    
+    # Monta os novos confrontos pegando os vencedores em sequência (Mesa 1 vs Mesa 2, etc)
+    novas_mesas = []
+    mesa_id = 1
+    
+    for i in range(0, len(vencedores), 2):
+        j1 = vencedores[i]
+        j2 = vencedores[i+1] if (i+1) < len(vencedores) else "FOLGA_WO"
+        
+        status_inicial = 'Pendente'
+        sets_j1, sets_j2, tentos_j1, tentos_j2 = 0, 0, 0, 0
+        
+        if j2 == "FOLGA_WO":
+            status_inicial = 'Concluído'
+            sets_j1, tentos_j1 = 2, 72
+            
+        novas_mesas.append({
+            'Mesa': mesa_id,
+            'Jogador1': j1, 'Jogador2': j2,
+            'SetsJ1': sets_j1, 'SetsJ2': sets_j2,
+            'TentosJ1': tentos_j1, 'TentosJ2': tentos_j2,
+            'FloresJ1': 0, 'FloresJ2': 0,
+            'Status': status_inicial
+        })
+        mesa_id += 1
+        
+    dados['FasesMataMata'] = {
+        'FaseAtual': proximo_nome,
+        'Status': 'Em Andamento',
+        'Mesas': novas_mesas
+    }
+    return True
