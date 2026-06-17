@@ -2,7 +2,7 @@ import random
 import gerenciador_dados
 
 def processar_classificacao(dados):
-    """Aplica os 9 critérios de desempate oficiais do Truco de Mano."""
+    """Aplica os 9 critérios de desempate oficiais do Truco de Mano e computa Flores do Suíço + Mata-Mata."""
     jogadores = dados.get('Jogadores', [])  # Lista de dicionários: [{'Nome': '...', 'Entidade': '...'}]
     rodadas = dados.get('Rodadas', [])
     
@@ -18,7 +18,9 @@ def processar_classificacao(dados):
         
     historico_confrontos = {j['Nome']: [] for j in jogadores}
     
-    # Computa os resultados das mesas concluídas do Suíço (Fase Classificatória)
+    # ==========================================================================
+    # 1. Computa os resultados das mesas concluídas do Suíço (Fase Classificatória)
+    # ==========================================================================
     for r in rodadas:
         for m in r.get('Mesas', []):
             if m.get('Status') == 'Concluído':
@@ -53,6 +55,30 @@ def processar_classificacao(dados):
                         tabela[j2]['Pts'] += 3
                         tabela[j2]['Vit'] += 1
 
+    # ==========================================================================
+    # 🔥 NOVO: AJUSTE DAS FLORES PARA O MATA-MATA (Ponto a Ponto até a Final)
+    # ==========================================================================
+    
+    # A) Soma as flores armazenadas de fases que já passaram no Mata-Mata
+    flores_acumuladas_mata = dados.get('FloresAcumuladasMata', {})
+    for jog_nome, flores_antigas in flores_acumuladas_mata.items():
+        if jog_nome in tabela:
+            tabela[jog_nome]['FlorPró'] += int(flores_antigas)
+
+    # B) Soma as flores da rodada eliminatória ATUAL em tempo real (antes de avançar)
+    fase_mata = dados.get('FasesMataMata', {})
+    for m in fase_mata.get('Mesas', []):
+        if m.get('Status') == 'Concluído':
+            j1, j2 = m['Jogador1'], m['Jogador2']
+            if j1 in tabela and j1 != "FOLGA_WO":
+                tabela[j1]['FlorPró'] += int(m.get('FloresJ1', 0))
+                tabela[j1]['FlorContra'] += int(m.get('FloresJ2', 0))
+            if j2 in tabela and j2 != "FOLGA_WO":
+                tabela[j2]['FlorPró'] += int(m.get('FloresJ2', 0))
+                tabela[j2]['FlorContra'] += int(m.get('FloresJ1', 0))
+
+    # ==========================================================================
+
     # Calcula os saldos
     for j in tabela:
         tabela[j]['SaldoSets'] = tabela[j]['SetsPró'] - tabela[j]['SetsContra']
@@ -69,9 +95,9 @@ def processar_classificacao(dados):
             tabela[j]['Bukes'] = soma_pts_oponentes
 
     # Remove o chapéu da exibição da tabela
-    lista_tabela = [tabela[j] for j in tabela if j != "CHAPÉU"]
+    lista_tabela = [tabela[j] for j in tabela if j != "CHAPÉU" and j != "FOLGA_WO"]
     
-    # Ordenação oficial por prioridade de critérios
+    # Ordenação oficial por prioridade de critérios (Mantendo FloresPró pesando no desempate)
     lista_tabela.sort(key=lambda x: (
         x['Pts'], 
         x['Vit'], 
