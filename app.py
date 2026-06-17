@@ -211,7 +211,7 @@ def injetar_cronometro_javascript(key_prefix="default"):
                 var minutos = Math.floor(segundosRestantes / 60);
                 var segundos = segundosRestantes % 60;
                 
-                var strMin = minutos < 10 ? "0" + minutes : minutos;
+                var strMin = minutos < 10 ? "0" + minutos : minutos;
                 var strSeg = segundos < 10 ? "0" + segundos : segundos;
                 
                 if (segundosRestantes < 300) {{
