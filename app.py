@@ -400,22 +400,44 @@ else:
     abas_criadas = st.tabs(abas_lista)
     aba_index = 0
     
-    # --- 1. ABA: CLASSIFICAÇÃO GERAL ---
+  # --- 1. ABA: CLASSIFICAÇÃO GERAL ---
     with abas_criadas[aba_index]:
-        st.markdown("<h2 style='color: #ffbf00 !important;'>📊 Classificação Estratégica</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color: #ffbf00 !important;'>📊 Tabela Oficial de Pontuação</h2>", unsafe_allow_html=True)
         if dados['Status'] != 'Configuração' and dados.get('Jogadores'):
             lista_classificada = motor_truco.processar_classificacao(dados)
             st.markdown("### 🏆 Liderança Atual e Destaques")
             exibir_podio_arena(lista_classificada)
             
+            # Transforma a lista do motor em DataFrame
             df_class = pd.DataFrame(lista_classificada)
-            df_class.index = [f"{i+1}º" for i in range(len(df_class))]
-            df_visual = df_class.rename(columns={
-                'Nome': 'Jogador/Dupla', 'Entidade': 'Entidade/Equipe', 'Pts': 'Pontos', 'Vit': 'Vitórias',
-                'SaldoSets': 'Saldo Sets', 'SetsPró': 'Sets Pró', 'SaldoTent': 'Saldo Tentos', 'TentPró': 'Tentos Pró',
-                'SaldoFlor': 'Saldo Flores', 'FlorPró': 'Flores Pró', 'Bukes': 'Buchholz', 'Jogos': 'Partidas'
-            })
-            st.dataframe(df_visual[['Jogador/Dupla', 'Entidade/Equipe', 'Pontos', 'Vitórias', 'Saldo Sets', 'Sets Pró', 'Saldo Tentos', 'Tentos Pró', 'Saldo Flores', 'Flores Pró', 'Buchholz', 'Partidas']], use_container_width=True)
+            
+            # 🔥 SELEÇÃO E RENOMEAÇÃO CRÍTICA: Filtra apenas as colunas da imagem
+            df_filtrado = df_class[[
+                'Nome',          # Coluna do Jogador
+                'Vit',           # Vitorias
+                'SetsPró',       # Sets_Ganhos
+                'TentPró',       # Tentos_Pro
+                'TentContra',    # Tentos_Contra
+                'SaldoTent',     # Saldo_Tentos
+                'FlorPró'        # Flores
+            ]].copy()
+            
+            # Renomeia os cabeçalhos para ficarem idênticos ao seu modelo
+            df_filtrado.columns = [
+                'Jogador', 
+                'Vitorias', 
+                'Sets_Ganhos', 
+                'Tentos_Pro', 
+                'Tentos_Contra', 
+                'Saldo_Tentos', 
+                'Flores'
+            ]
+            
+            # Ajusta o índice lateral para começar em 1 (1, 2, 3...) igual à foto
+            df_filtrado.index = range(1, len(df_filtrado) + 1)
+            
+            # Exibe a tabela limpa na tela
+            st.dataframe(df_filtrado, use_container_width=True)
         else:
             st.warning("Torneio em fase de montagem de chaves. Veja a lista dos competidores já confirmados:")
             if dados.get('Jogadores'):
@@ -424,7 +446,6 @@ else:
             else:
                 st.info("Nenhum competidor inscrito até o momento.")
     aba_index += 1
-
     # --- 2. ABA: INSCRIÇÃO ONLINE (SÓ APARECE EM CONFIGURAÇÃO) ---
     if "📝 Inscrição Online" in abas_lista:
         with abas_criadas[aba_index]:
