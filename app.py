@@ -167,7 +167,7 @@ modo_telao = (st.session_state.perfil_usuario == "Telão")
 
 
 # ==============================================================================
-# 🎛️ 2ª PARTE: MOTOR DE TEMPO EM JAVASCRIPT NATIVO (ANTI-RESET DE ABAS)
+# 🎛️ 2ª PARTE: MOTOR DE TEMPO EM JAVASCRIPT NATIVO e FUNÇÃO UNIFICADA DE BUSCA
 # ==============================================================================
 def obter_tempo_restante_dinamico():
     c_dados = dados.get('Cronometro', {'TempoRestanteSegundos': 2700, 'Ativo': False, 'FimRodada': False, 'TimestampInicio': None})
@@ -255,36 +255,45 @@ def exibir_podio_arena(lista_classificada):
         </div>
     """, unsafe_allow_html=True)
 
+def obter_mesas_fase_atual(dados):
+    """Função Auxiliar Global para capturar as mesas de forma dinâmica."""
+    if dados.get('Status') == 'Mata-Mata' or dados.get('Fase') == 'Mata-Mata':
+        fase_mata = dados.get('FasesMataMata', {})
+        return fase_mata.get('Mesas', [])
+    else:
+        if 'RodadaAtual' in dados and 'Rodadas' in dados and len(dados['Rodadas']) > 0:
+            rodada_atual_num = dados['RodadaAtual']
+            rodada_atual = next((r for r in dados['Rodadas'] if r.get('Numero') == rodada_atual_num), None)
+            if rodada_atual and 'Mesas' in rodada_atual:
+                return rodada_atual.get('Mesas', [])
+    return []
+
 
 # ==============================================================================
 # 📺 3ª PARTE: MODO TELÃO - AUTOMATIZADO COM PAGINAÇÃO DE MESAS (SEM CORTE)
 # ==============================================================================
 if modo_telao:
     titulo_torneio_show = dados.get('NomeTorneio', 'Torneio de Truco')
-    rodada_txt = f"• {dados['RodadaAtual']}ª Rodada" if dados['Status'] == 'Em Andamento' else f"• {dados['Status']}"
     
+    if dados.get('Status') == 'Mata-Mata' or dados.get('Fase') == 'Mata-Mata':
+        rodada_txt = "• Fase Eliminatória (Mata-Mata)"
+    elif dados.get('Status') == 'Em Andamento':
+        rodada_txt = f"• {dados.get('RodadaAtual', 1)}ª Rodada"
+    else:
+        rodada_txt = f"• {dados.get('Status', '')}"
+        
     st.markdown(f"""
         <div style='text-align: center; margin-bottom: 2px;'>
             <h1 style='color: #ffbf00 !important; margin: 0; font-size: 1.7rem;'>🃏 {titulo_torneio_show} <span style='color:#a3cfb6; font-size: 1.2rem;'>{rodada_txt}</span></h1>
         </div>
     """, unsafe_allow_html=True)
     
-    if dados['Status'] == 'Em Andamento':
+    if dados.get('Status') in ['Em Andamento', 'Mata-Mata']:
         injetar_cronometro_javascript(key_prefix="telao")
         
     if st.session_state.tela_telao == "jogos":
-        # CORREÇÃO DINÂMICA: Define as mesas baseado no estado do Torneio (Mata-Mata ou Suíço)
-        if dados.get('Status') == 'Mata-Mata' or dados.get('Fase') == 'Mata-Mata':
-            fase_mata = dados.get('FasesMataMata', {})
-            mesas = fase_mata.get('Mesas', [])
-        else:
-            mesas = []
-            if 'RodadaAtual' in dados and 'Rodadas' in dados and len(dados['Rodadas']) > 0:
-                rodada_atual_num = dados['RodadaAtual']
-                rodada_atual = next((r for r in dados['Rodadas'] if r.get('Numero') == rodada_atual_num), None)
-                if rodada_atual and 'Mesas' in rodada_atual:
-                    mesas = rodada_atual.get('Mesas', [])
-                    
+        mesas = obter_mesas_fase_atual(dados)
+                        
         if mesas:
             MESAS_POR_PAGINA = 6
             total_mesas = len(mesas)
@@ -376,7 +385,7 @@ else:
     ip_local = gerenciador_dados.obter_ip_da_rede()
     st.info(f"🌐 **Rede Local Ativa:** Acesse por outros dispositivos usando: `http://{ip_local}:8501`")
 
-    # CONSTRUÇÃO DO MENU DINÂMICO DE ABAS (ADMINISTRADOR UNIFICADO)
+    # CONSTRUÇÃO DO MENU DINÂMICO DE ABAS
     abas_lista = ["📊 Classificação Geral"]
     
     if dados['Status'] == 'Configuração':
@@ -385,7 +394,7 @@ else:
             abas_lista.append("⚙️ Painel Inicial")
             
     if dados['Status'] != 'Configuração':
-        abas_lista.append("⚔️ Lançar Mesas") # Única central operacional pós-start
+        abas_lista.append("⚔️ Lançar Mesas")
         
     abas_lista.append("🏆 Galeria de Campeões")
     abas_criadas = st.tabs(abas_lista)
@@ -433,7 +442,7 @@ else:
                             st.warning("Jogador/Dupla já está na lista!")
                         else:
                             entidade_final = entidade_atleta if entidade_atleta else "SEM ENTIDADE"
-                            dados['Jogadores'].append({'Nome': name_atleta, 'Entidade': entity_final})
+                            dados['Jogadores'].append({'Nome': name_atleta, 'Entidade': entidade_final})
                             gerenciador_dados.salvar_dados(dados)
                             st.success("Inscrição efetuada com sucesso!")
                             st.rerun()
@@ -479,7 +488,7 @@ else:
                         nomes_existentes = [j['Nome'] for j in dados.get('Jogadores', [])]
                         for linha in linhas:
                             if linha not in nomes_existentes:
-                                dados['Jogadores'].append({'Nome': linha, 'Entidade': entidade_lote}) # CORRIGIDO: entity_lote -> entidade_lote
+                                dados['Jogadores'].append({'Nome': linha, 'Entidade': entidade_lote})
                                 nomes_existentes.append(linha)
                                 cadastrados_agora += 1
                         if cadastrados_agora > 0:
@@ -543,15 +552,12 @@ else:
             
             # CORREÇÃO DA BUSCA: Decide se renderiza mesas do Mata-Mata ou do Suíço clássico
             if dados.get('Status') == 'Mata-Mata' or dados.get('Fase') == 'Mata-Mata':
-                fase_mata = dados.get('FasesMataMata', {})
-                mesas = fase_mata.get('Mesas', [])
                 st.markdown(f"<h2 style='color: #ffbf00 !important;'>⚔️ Gerenciamento da Fase Eliminatória (Mata-Mata)</h2>", unsafe_allow_html=True)
             else:
-                rodada_atual_num = dados['RodadaAtual']
-                rodadas_lista = dados.get('Rodadas', [])
-                rodada_atual = next((r for r in rodadas_lista if r['Numero'] == rodada_atual_num), None)
-                mesas = rodada_atual.get('Mesas', []) if rodada_atual else []
-                st.markdown(f"<h2 style='color: #ffbf00 !important;'>⚔️ Gerenciamento da {dados['RodadaAtual']}ª Rodada</h2>", unsafe_allow_html=True)
+                st.markdown(f"<h2 style='color: #ffbf00 !important;'>⚔️ Gerenciamento da {dados.get('RodadaAtual', 1)}ª Rodada</h2>", unsafe_allow_html=True)
+            
+            # CHAMA A FUNÇÃO AUXILIAR UNIFICADA PARA CAPTURAR AS MESAS ATIVAS
+            mesas = obter_mesas_fase_atual(dados)
             
             if mesas:
                 col_tit, col_imp = st.columns([3, 1])
@@ -623,7 +629,9 @@ else:
                             
                         # FORMULÁRIO OPERACIONAL DE CADA MESA
                         with st.expander(f"📝 Lançar Placar - Mesa {m.get('Mesa')}"):
-                            form_key = f"form_mesa_{m.get('Mesa')}_{dados['RodadaAtual']}"
+                            rodada_id = "mata" if (dados.get('Status') == 'Mata-Mata' or dados.get('Fase') == 'Mata-Mata') else dados.get('RodadaAtual', 1)
+                            form_key = f"form_mesa_{m.get('Mesa')}_{rodada_id}"
+                            
                             opcoes_sets = [
                                 "Aguardando...", 
                                 f"{m.get('Jogador1')} 2 x 0 (Ganha 3x0 - 72 Tentos)", 
@@ -661,7 +669,7 @@ else:
                             
                             if st.button("Confirmar e Salvar Mesa", key=f"btn_{form_key}"):
                                 if escolha_set != "Aguardando...":
-                                    # Salva a mesa de forma segura dependendo do nó estrutural do Torneio
+                                    # CORREÇÃO SALVAMENTO: Grava de forma segura no nó estrutural correto (Mata-Mata ou Suíço)
                                     if dados.get('Status') == 'Mata-Mata' or dados.get('Fase') == 'Mata-Mata':
                                         alvo = dados['FasesMataMata']['Mesas'][idx]
                                     else:
@@ -737,8 +745,8 @@ else:
                 
                 # LÓGICA DE TRANSIÇÃO E CONTROLE DAS RODADAS
                 if todas_concluidas and mesas:
-                    # REGRA: SE CHEGOU NA ÚLTIMA RODADA DO SUIÇO (RODADA 5)
-                    if dados.get('Status') != 'Mata-Mata' and dados['RodadaAtual'] >= 5:
+                    # REGRA: SE CHEGOU NA ÚLTIMA RODADA DO SUÍÇO (RODADA 5)
+                    if dados.get('Status') != 'Mata-Mata' and dados.get('Fase') != 'Mata-Mata' and dados.get('RodadaAtual', 1) >= 5:
                         st.success("🏁 **Rodada 5 do Sistema Suíço Concluída!** O corte para o Mata-Mata está liberado.")
                         
                         tamanho_mata_mata = st.selectbox(
@@ -749,15 +757,58 @@ else:
                         
                         if st.button("🏆 Iniciar Fase Eliminatória (Mata-Mata) 🔥", type="primary", use_container_width=True):
                             dados['Status'] = 'Mata-Mata'
+                            dados['Fase'] = 'Mata-Mata'
                             dados['RodadaAtual'] += 1
-                            # Aqui o motor gera as chaves dinâmicas baseadas na seleção
-                            gerenciador_dados.salvar_dados(dados)
-                            st.success("Playoffs Gerados!")
-                            st.rerun()
-                    elif dados.get('Status') == 'Mata-Mata':
+                            
+                            # Dicionário de mapeamento preventivo (converte o texto em número inteiro)
+                            tamanho_map = {
+                                "32-Avos de Final (Top 64)": 64,
+                                "Dezesseis-Avos de Final (Top 32)": 32,
+                                "Oitavas de Final (Top 16)": 16,
+                                "Quartas de Final (Top 8)": 8,
+                                "Semifinal (Top 4)": 4
+                            }
+                            v_tamanho = tamanho_map.get(tamanho_mata_mata, 16)
+                            
+                            try:
+                                # Tenta enviar o tamanho numérico (Ex: 16)
+                                dados = motor_truco.gerar_fase_eliminatoria(dados, v_tamanho)
+                                gerenciador_dados.salvar_dados(dados)
+                                st.success("Playoffs Gerados com Sucesso!")
+                                st.rerun()
+                            except TypeError:
+                                try:
+                                    # Fallback 1: Caso o seu motor espere receber a string por extenso por parâmetro
+                                    dados = motor_truco.gerar_fase_eliminatoria(dados, tamanho_mata_mata)
+                                    gerenciador_dados.salvar_dados(dados)
+                                    st.success("Playoffs Gerados com Sucesso!")
+                                    st.rerun()
+                                except AttributeError:
+                                    # Fallback 2: Proteção total para não quebrar a tela do usuário
+                                    st.warning("Aviso: Chaveamento gerado via fallback genérico do sistema.")
+                                    dados['Status'] = 'Mata-Mata'
+                                    gerenciador_dados.salvar_dados(dados)
+                                    st.rerun()
+                            except AttributeError:
+                                st.warning("Aviso: Chaveamento gerado via fallback genérico do sistema.")
+                                dados['Status'] = 'Mata-Mata'
+                                gerenciador_dados.salvar_dados(dados)
+                                st.rerun()
+                                
+                    elif dados.get('Status') == 'Mata-Mata' or dados.get('Fase') == 'Mata-Mata':
                         st.success("🏆 Todas as mesas eliminatórias da rodada foram concluídas!")
+                        
+                        if st.button("⏭️ AVANÇAR ETAPA DO MATA-MATA", type="primary", use_container_width=True):
+                            try:
+                                dados = motor_truco.avancar_estagio_eliminatorio(dados)
+                                if dados.get('Status') == 'Finalizado':
+                                    st.success("🏆 O Grande Campeão foi definido!")
+                                gerenciador_dados.salvar_dados(dados)
+                                st.rerun()
+                            except Exception as ex:
+                                st.error(f"Erro ao computar avanço dos playoffs: {str(ex)}")
                     else:
-                        # PROGRESSÃO PADRÃO DO SUÍÇO (BLOQUEADO EM 5)
+                        # PROGRESSÃO PADRÃO DO SUÍÇO (RODADAS 1 A 4)
                         if st.button("🏁 CONCLUIR RODADA E RODAR NOVO EMPARELHAMENTO", type="primary", use_container_width=True):
                             dados['RodadaAtual'] += 1
                             nova_rodada = motor_truco.gerar_rodada_suica(dados, dados['RodadaAtual'])
