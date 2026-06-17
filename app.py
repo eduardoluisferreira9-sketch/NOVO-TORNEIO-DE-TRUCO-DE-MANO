@@ -446,6 +446,7 @@ else:
             else:
                 st.info("Nenhum competidor inscrito até o momento.")
     aba_index += 1
+  
     # --- 2. ABA: INSCRIÇÃO ONLINE (SÓ APARECE EM CONFIGURAÇÃO) ---
     if "📝 Inscrição Online" in abas_lista:
         with abas_criadas[aba_index]:
@@ -778,7 +779,6 @@ else:
                             )
                             
                             if st.button("🏆 Iniciar Fase Eliminatória (Mata-Mata) 🔥", type="primary", use_container_width=True):
-                                # Sincronização dos estados antes da chamada
                                 dados['Status'] = 'Mata-Mata'
                                 dados['Fase'] = 'Mata-Mata'
                                 
@@ -867,3 +867,81 @@ else:
                                 
                     if 'rerun_sucesso' in locals():
                         st.rerun()
+
+                # ==========================================================================
+                # 🔥 ZONA DE GERENCIAMENTO GERAL (Abaixo das condicionais e sempre visível)
+                # ==========================================================================
+                st.markdown("<br><hr>", unsafe_allow_html=True)
+                st.markdown("### 🛠️ Painel de Controle e Manutenção Geral")
+                
+                col_adm1, col_adm2 = st.columns(2)
+                
+                with col_adm1:
+                    # --- BOTÃO: LANÇAR MANUALLY NO HISTÓRICO ---
+                    if st.button("🏆 Forçar Gravação do Pódio na Galeria", use_container_width=True, help="Registra os líderes atuais diretamente no histórico/galeria de forma manual"):
+                        try:
+                            podio = dados.get('PodioFinal', {})
+                            lista_classificada = motor_truco.processar_classificacao(dados)
+                            
+                            if podio and podio.get('Campeao'):
+                                txt_campeao = f"🥇 {podio.get('Campeao')} | 🥈 {podio.get('Vice')} | 🥉 {podio.get('Terceiro')}"
+                            elif lista_classificada:
+                                c1 = lista_classificada[0]['Nome'] if len(lista_classificada) > 0 else "N/A"
+                                c2 = lista_classificada[1]['Nome'] if len(lista_classificada) > 1 else "N/A"
+                                c3 = lista_classificada[2]['Nome'] if len(lista_classificada) > 2 else "N/A"
+                                txt_campeao = f"🥇 {c1} | 🥈 {c2} | 🥉 {c3}"
+                            else:
+                                txt_campeao = "Nenhum competidor pontuado"
+                                
+                            if 'HistoricoCampeoes' not in dados:
+                                dados['HistoricoCampeoes'] = []
+                                
+                            dados['HistoricoCampeoes'].append({
+                                'Torneio': dados.get('NomeTorneio', 'Torneio de Truco'),
+                                'Campeao': txt_campeao,
+                                'Data': datetime.now().strftime("%d/%m/%Y")
+                            })
+                            
+                            st.session_state.dados = dados
+                            gerenciador_dados.salvar_dados(dados)
+                            st.success("🏆 Pódio gravado na galeria com sucesso!")
+                            time.sleep(1)
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Erro ao salvar pódio: {str(e)}")
+
+                    # --- BOTÃO: LIMPAR HISTÓRICO DE CAMPEÕES ---
+                    if st.button("🗑️ Limpar Galeria de Histórico", use_container_width=True, help="Apaga permanentemente todos os registros salvos na galeria"):
+                        try:
+                            dados['HistoricoCampeoes'] = []
+                            st.session_state.dados = dados
+                            gerenciador_dados.salvar_dados(dados)
+                            st.success("A galeria de campeões foi zerada!")
+                            time.sleep(1)
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Erro ao limpar histórico: {str(e)}")
+
+                with col_adm2:
+                    # --- BOTÃO: PURGAR BANCO DE DADOS ---
+                    st.markdown("<p style='color:#ff4b4b; font-weight:bold; margin-bottom:5px;'>⚠️ Ação Crítica:</p>", unsafe_allow_html=True)
+                    if st.button("❌ PURGAR BANCO DE DADOS (Zerar Sistema)", type="primary", use_container_width=True, help="Apaga o torneio atual e redefine o banco de dados completamente"):
+                        try:
+                            # Preserva o histórico caso queira manter a galeria intacta ao zerar o campeonato
+                            historico_salvo = dados.get('HistoricoCampeoes', [])
+                            
+                            gerenciador_dados.limpar_banco_dados()
+                            
+                            # Para manter a galeria viva mesmo após resetar o app, descomente as linhas abaixo:
+                            # novos_dados = {'HistoricoCampeoes': historico_salvo}
+                            # st.session_state.dados = novos_dados
+                            # gerenciador_dados.salvar_dados(novos_dados)
+                            
+                            if 'dados' in st.session_state: 
+                                del st.session_state.dados
+                                
+                            st.success("O sistema foi totalmente resetado!")
+                            time.sleep(1)
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Erro ao zerar o sistema: {str(e)}")
