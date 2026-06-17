@@ -204,9 +204,11 @@ def gerar_rodada_suica(dados, numero_rodada):
         'Mesas': novas_mesas
     }
 
-# 🆕 NOVAS FUNÇÕES ADICIONADAS PARA SUPORTE AO MATA-MATA
+# ==============================================================================
+# 🆕 FUNÇÕES CORRIGIDAS PARA SUPORTE INTEGRADO AO MATA-MATA (RETORNO DE DADOS)
+# ==============================================================================
 
-def iniciar_mata_mata(dados, tamanho_mata):
+def gerar_fase_eliminatoria(dados, tamanho_mata):
     """
     Pega os top 'tamanho_mata' (32, 16, 8, 4) da tabela de classificação oficial
     e gera a primeira rodada eliminatória seguindo o cruzamento Olímpico Puro:
@@ -223,7 +225,7 @@ def iniciar_mata_mata(dados, tamanho_mata):
         classificados.append("FOLGA_WO")
         
     # Define o nome legível da fase com base no tamanho inicial escolhido
-    nomes_fases = {32: "32-Avos", 16: "Oitavas de Final", 8: "Quartas de Final", 4: "Semifinal"}
+    nomes_fases = {64: "32-Avos", 32: "Dezesseis-Avos", 16: "Oitavas de Final", 8: "Quartas de Final", 4: "Semifinal"}
     nome_fase_atual = nomes_fases.get(vagas, f"Mata-{vagas}")
     
     mesas_mata = []
@@ -259,9 +261,13 @@ def iniciar_mata_mata(dados, tamanho_mata):
         'Mesas': mesas_mata
     }
     dados['Fase'] = 'Mata-Mata'
-    return True
+    dados['Status'] = 'Mata-Mata'
+    
+    # 💥 RETORNO CORRIGIDO: Agora devolve o objeto modificado para o app.py salvar
+    return dados
 
-def avancar_fase_matamata(dados):
+
+def avancar_estagio_eliminatorio(dados):
     """
     Pega os vencedores da fase atual do Mata-Mata e gera o cruzamento da próxima etapa.
     Mantém a ordem sequencial dos vencedores das chaves estabelecidas.
@@ -273,13 +279,13 @@ def avancar_fase_matamata(dados):
     vencedores = []
     for m in mesas_anteriores:
         if m['Status'] == 'Concluído':
-            if m['SetsJ1'] > m['SetsJ2']:
+            if int(m['SetsJ1']) > int(m['SetsJ2']):
                 vencedores.append(m['Jogador1'])
             else:
                 vencedores.append(m['Jogador2'])
         else:
             # Salvaguarda para não deixar passar mesas em aberto
-            return False
+            return dados
             
     # Define a próxima fase do torneio
     proximas_etapas = {
@@ -291,11 +297,11 @@ def avancar_fase_matamata(dados):
     }
     
     if fase_atual not in proximas_etapas:
-        if fase_atual == "Grande Final":
+        if fase_atual == "Grande Final" or fase_atual == "Semifinal" and len(vencedores) == 1:
             dados['FasesMataMata']['Status'] = 'Finalizado'
             dados['Status'] = 'Finalizado'
-            return True
-        return False
+            return dados
+        return dados
         
     proximo_nome, total_mesas = proximas_etapas[fase_atual]
     
@@ -329,4 +335,8 @@ def avancar_fase_matamata(dados):
         'Status': 'Em Andamento',
         'Mesas': novas_mesas
     }
-    return True
+    dados['Fase'] = 'Mata-Mata'
+    dados['Status'] = 'Mata-Mata'
+    
+    # 💥 RETORNO CORRIGIDO
+    return dados
