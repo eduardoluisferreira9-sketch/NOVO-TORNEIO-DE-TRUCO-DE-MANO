@@ -735,8 +735,7 @@ else:
                         st.rerun()
                 
                 st.markdown("---")
-                
-                # VERIFICAÇÃO DE CONCLUSÃO DE TODAS AS MESAS
+# VERIFICAÇÃO DE CONCLUSÃO DE TODAS AS MESAS
                 todas_concluidas = True
                 if mesas:
                     for m in mesas:
@@ -744,102 +743,106 @@ else:
                             todas_concluidas = False
                 
                 # LÓGICA DE TRANSIÇÃO E CONTROLE DAS RODADAS
-                if todas_concluidas and mesas:
-                    # REGRA: SE CHEGOU NA ÚLTIMA RODADA DO SUÍÇO (RODADA 5)
-                    if dados.get('Status') != 'Mata-Mata' and dados.get('Fase') != 'Mata-Mata' and dados.get('RodadaAtual', 1) >= 5:
-                        st.success("🏁 **Rodada 5 do Sistema Suíço Concluída!** O corte para o Mata-Mata está liberado.")
-                        
-                        tamanho_mata_mata = st.selectbox(
-                            "Escolha o tamanho do chaveamento eliminatório:",
-                            ["32-Avos de Final (Top 64)", "Dezesseis-Avos de Final (Top 32)", "Oitavas de Final (Top 16)", "Quartas de Final (Top 8)", "Semifinal (Top 4)"],
-                            key="sel_tamanho_playoffs"
-                        )
-                        
-                    if st.button("🏆 Iniciar Fase Eliminatória (Mata-Mata) 🔥", type="primary", use_container_width=True):
-                            # Sincronização dos estados antes da chamada
-                            dados['Status'] = 'Mata-Mata'
-                            dados['Fase'] = 'Mata-Mata'
+                # --- FASE 1: SISTEMA SUÍÇO (Fase Classificatória) ---
+                if dados.get('Status') != 'Mata-Mata' and dados.get('Fase') != 'Mata-Mata':
+                    if todas_concluidas and mesas:
+                        # REGRA: SE CHEGOU NA ÚLTIMA RODADA DO SUÍÇO (RODADA 5)
+                        if dados.get('RodadaAtual', 1) >= 5:
+                            st.success("🏁 **Rodada 5 do Sistema Suíço Concluída!** O corte para o Mata-Mata está liberado.")
                             
-                            tamanho_map = {
-                                "32-Avos de Final (Top 64)": 64,
-                                "Dezesseis-Avos de Final (Top 32)": 32,
-                                "Oitavas de Final (Top 16)": 16,
-                                "Quartas de Final (Top 8)": 8,
-                                "Semifinal (Top 4)": 4
-                            }
-                            v_tamanho = tamanho_map.get(tamanho_mata_mata, 16)
+                            tamanho_mata_mata = st.selectbox(
+                                "Escolha o tamanho do chaveamento eliminatório:",
+                                ["32-Avos de Final (Top 64)", "Dezesseis-Avos de Final (Top 32)", "Oitavas de Final (Top 16)", "Quartas de Final (Top 8)", "Semifinal (Top 4)"],
+                                key="sel_tamanho_playoffs"
+                            )
                             
-                            try:
-                                # Chama o motor e captura o retorno explícito
-                                retorno_dados = motor_truco.gerar_fase_eliminatoria(dados, v_tamanho)
-                                if retorno_dados is not None:
-                                    dados = retorno_dados
-                                
+                            if st.button("🏆 Iniciar Fase Eliminatória (Mata-Mata) 🔥", type="primary", use_container_width=True):
+                                # Sincronização dos estados antes da chamada
                                 dados['Status'] = 'Mata-Mata'
                                 dados['Fase'] = 'Mata-Mata'
                                 
+                                tamanho_map = {
+                                    "32-Avos de Final (Top 64)": 64,
+                                    "Dezesseis-Avos de Final (Top 32)": 32,
+                                    "Oitavas de Final (Top 16)": 16,
+                                    "Quartas de Final (Top 8)": 8,
+                                    "Semifinal (Top 4)": 4
+                                }
+                                v_tamanho = tamanho_map.get(tamanho_mata_mata, 16)
+                                
+                                try:
+                                    retorno_dados = motor_truco.gerar_fase_eliminatoria(dados, v_tamanho)
+                                    if retorno_dados is not None:
+                                        dados = retorno_dados
+                                    
+                                    dados['Status'] = 'Mata-Mata'
+                                    dados['Fase'] = 'Mata-Mata'
+                                    
+                                    st.session_state.dados = dados
+                                    gerenciador_dados.salvar_dados(dados)
+                                    
+                                    st.success("Playoffs Gerados com Sucesso!")
+                                    st.rerun()
+                                    
+                                except Exception as e:
+                                    st.error(f"Erro Crítico ao acionar o motor de chaves: {str(e)}")
+                
+                # --- FASE 2: MATA-MATA (Independente do Suíço) ---
+                elif dados.get('Status') == 'Mata-Mata' or dados.get('Fase') == 'Mata-Mata':
+                    fase_atual_nome = dados.get('FasesMataMata', {}).get('FaseAtual', '')
+                    mesas_mata = dados.get('FasesMataMata', {}).get('Mesas', [])
+                    
+                    # --- CASO A: ESTAMOS NA GRANDE FINAL & 3º LUGAR ---
+                    if fase_atual_nome == 'Grande Final & 3º Lugar':
+                        st.success("🏆 **A Grande Final e a disputa de 3º Lugar terminaram!** O torneio está pronto para ser encerrado.")
+                        
+                        if st.button("🏁 ENCERRAR CAMPEONATO E SALVAR HISTÓRICO", type="primary", use_container_width=True):
+                            try:
+                                dados = motor_truco.avancar_estagio_eliminatorio(dados)
+                                
+                                podio = dados.get('PodioFinal', {})
+                                if podio:
+                                    if 'HistoricoCampeoes' not in dados:
+                                        dados['HistoricoCampeoes'] = []
+                                        
+                                    dados['HistoricoCampeoes'].append({
+                                        'Torneio': dados.get('NomeTorneio', 'Torneio de Truco'),
+                                        'Campeao': f"🥇 {podio.get('Campeao')} | 🥈 {podio.get('Vice')} | 🥉 {podio.get('Terceiro')}",
+                                        'Data': datetime.now().strftime("%d/%m/%Y")
+                                    })
+                                
                                 st.session_state.dados = dados
                                 gerenciador_dados.salvar_dados(dados)
-                                
-                                st.success("Playoffs Gerados com Sucesso!")
+                                st.success("Campeonato Encerrado! Dados enviados para a Galeria.")
+                                time.sleep(1)
                                 st.rerun()
+                            except Exception as ex:
+                                st.error(f"Erro ao encerrar o campeonato: {str(ex)}")
                                 
-                            except Exception as e:
-                                st.error(f"Erro Crítico ao acionar o motor de chaves: {str(e)}")
-
-                        # --- CONTROLE DE AVANÇO DO MATA-MATA (Alinhado com o 'if' principal das mesas) ---
-                        elif dados.get('Status') == 'Mata-Mata' or dados.get('Fase') == 'Mata-Mata':
-                            fase_atual_nome = dados.get('FasesMataMata', {}).get('FaseAtual', '')
-                            mesas_mata = dados.get('FasesMataMata', {}).get('Mesas', [])
-                            
-                            # --- CASO A: ESTAMOS NA GRANDE FINAL & 3º LUGAR ---
-                            if fase_atual_nome == 'Grande Final & 3º Lugar':
-                                st.success("🏆 **A Grande Final e a disputa de 3º Lugar terminaram!** O torneio está pronto para ser encerrado.")
+                    # --- CASO B: OUTRA FASE QUALQUER (Oitavas, Quartas, Semifinal...) ---
+                    else:
+                        st.success(f"🏆 Todas as mesas da fase '{fase_atual_nome}' foram concluídas!")
+                        
+                        if st.button("⏭️ AVANÇAR ETAPA DO MATA-MATA", type="primary", use_container_width=True):
+                            try:
+                                if 'FloresAcumuladasMata' not in dados:
+                                    dados['FloresAcumuladasMata'] = {}
+                                    
+                                for m in mesas_mata:
+                                    j1, j2 = m['Jogador1'], m['Jogador2']
+                                    if j1 != "FOLGA_WO":
+                                        dados['FloresAcumuladasMata'][j1] = dados['FloresAcumuladasMata'].get(j1, 0) + int(m.get('FloresJ1', 0))
+                                    if j2 != "FOLGA_WO":
+                                        dados['FloresAcumuladasMata'][j2] = dados['FloresAcumuladasMata'].get(j2, 0) + int(m.get('FloresJ2', 0))
                                 
-                                if st.button("🏁 ENCERRAR CAMPEONATO E SALVAR HISTÓRICO", type="primary", use_container_width=True):
-                                    try:
-                                        dados = motor_truco.avancar_estagio_eliminatorio(dados)
-                                        
-                                        podio = dados.get('PodioFinal', {})
-                                        if podio:
-                                            if 'HistoricoCampeoes' not in dados:
-                                                dados['HistoricoCampeoes'] = []
-                                                
-                                            dados['HistoricoCampeoes'].append({
-                                                'Torneio': dados.get('NomeTorneio', 'Torneio de Truco'),
-                                                'Campeao': f"🥇 {podio.get('Campeao')} | 🥈 {podio.get('Vice')} | 🥉 {podio.get('Terceiro')}",
-                                                'Data': datetime.now().strftime("%d/%m/%Y")
-                                            })
-                                        
-                                        st.session_state.dados = dados
-                                        gerenciador_dados.salvar_dados(dados)
-                                        st.success("Campeonato Encerrado! Dados enviados para a Galeria.")
-                                        time.sleep(1)
-                                        st.rerun()
-                                    except Exception as ex:
-                                        st.error(f"Erro ao encerrar o campeonato: {str(ex)}")
-                                        
-                            # --- CASO B: OUTRA FASE QUALQUER (Oitavas, Quartas, Semifinal...) ---
-                            else:
-                                st.success(f"🏆 Todas as mesas da fase '{fase_atual_nome}' foram concluídas!")
+                                dados = motor_truco.avancar_estagio_eliminatorio(dados)
+                                st.session_state.dados = dados
+                                gerenciador_dados.salvar_dados(dados)
+                                st.toast("Playoffs avançados!", icon="⚔️")
+                                time.sleep(0.5)
+                                rerun_sucesso = True
+                            except Exception as ex:
+                                st.error(f"Erro ao computar avanço dos playoffs: {str(ex)}")
                                 
-                                if st.button("⏭️ AVANÇAR ETAPA DO MATA-MATA", type="primary", use_container_width=True):
-                                    try:
-                                        if 'FloresAcumuladasMata' not in dados:
-                                            dados['FloresAcumuladasMata'] = {}
-                                            
-                                        for m in mesas_mata:
-                                            j1, j2 = m['Jogador1'], m['Jogador2']
-                                            if j1 != "FOLGA_WO":
-                                                dados['FloresAcumuladasMata'][j1] = dados['FloresAcumuladasMata'].get(j1, 0) + int(m.get('FloresJ1', 0))
-                                            if j2 != "FOLGA_WO":
-                                                dados['FloresAcumuladasMata'][j2] = dados['FloresAcumuladasMata'].get(j2, 0) + int(m.get('FloresJ2', 0))
-                                        
-                                        dados = motor_truco.avancar_estagio_eliminatorio(dados)
-                                        st.session_state.dados = dados
-                                        gerenciador_dados.salvar_dados(dados)
-                                        st.toast("Playoffs avançados!", icon="⚔️")
-                                        time.sleep(0.5)
-                                        st.rerun()
-                                    except Exception as ex:
-                                        st.error(f"Erro ao computar avanço dos playoffs: {str(ex)}")
+                    if 'rerun_sucesso' in locals():
+                        st.rerun()
