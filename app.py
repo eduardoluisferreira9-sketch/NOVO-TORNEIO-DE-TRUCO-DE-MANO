@@ -473,7 +473,7 @@ else:
                             ent_f = nova_ent if nova_ent else "MESA"
                             dados['Jogadores'].append({'Nome': novo_nome, 'Entidade': ent_f})
                             gerenciador_dados.salvar_dados(dados)
-                            st.success(f"🎉 '{novo_nome}' integrado!")
+                            st.success(f"🎉 '{novo_nome}' integrated!")
                             st.rerun()
             else:
                 st.markdown("> **Instruções do Lote:** Insira **um competidor por linha**.")
@@ -756,11 +756,10 @@ else:
                         )
                         
                         if st.button("🏆 Iniciar Fase Eliminatória (Mata-Mata) 🔥", type="primary", use_container_width=True):
+                            # 🔥 CORREÇÃO CRÍTICA: Sincronização dos estados antes da chamada
                             dados['Status'] = 'Mata-Mata'
                             dados['Fase'] = 'Mata-Mata'
-                            dados['RodadaAtual'] += 1
                             
-                            # Dicionário de mapeamento preventivo (converte o texto em número inteiro)
                             tamanho_map = {
                                 "32-Avos de Final (Top 64)": 64,
                                 "Dezesseis-Avos de Final (Top 32)": 32,
@@ -771,29 +770,37 @@ else:
                             v_tamanho = tamanho_map.get(tamanho_mata_mata, 16)
                             
                             try:
-                                # Tenta enviar o tamanho numérico (Ex: 16)
-                                dados = motor_truco.gerar_fase_eliminatoria(dados, v_tamanho)
+                                # Chama o motor e captura o retorno explícito
+                                retorno_dados = motor_truco.gerar_fase_eliminatoria(dados, v_tamanho)
+                                if retorno_dados is not None:
+                                    dados = retorno_dados
+                                
+                                # Garante as chaves no dicionário pós-processamento
+                                dados['Status'] = 'Mata-Mata'
+                                dados['Fase'] = 'Mata-Mata'
+                                
+                                # Força o Streamlit a reconhecer o novo estado e grava no banco
+                                st.session_state.dados = dados
                                 gerenciador_dados.salvar_dados(dados)
+                                
                                 st.success("Playoffs Gerados com Sucesso!")
                                 st.rerun()
+                                
                             except TypeError:
                                 try:
-                                    # Fallback 1: Caso o seu motor espere receber a string por extenso por parâmetro
-                                    dados = motor_truco.gerar_fase_eliminatoria(dados, tamanho_mata_mata)
-                                    gerenciador_dados.salvar_dados(dados)
-                                    st.success("Playoffs Gerados com Sucesso!")
-                                    st.rerun()
-                                except AttributeError:
-                                    # Fallback 2: Proteção total para não quebrar a tela do usuário
-                                    st.warning("Aviso: Chaveamento gerado via fallback genérico do sistema.")
+                                    # Fallback 1: Se o motor esperar String
+                                    retorno_dados = motor_truco.gerar_fase_eliminatoria(dados, tamanho_mata_mata)
+                                    if retorno_dados is not None:
+                                        dados = retorno_dados
                                     dados['Status'] = 'Mata-Mata'
+                                    dados['Fase'] = 'Mata-Mata'
+                                    st.session_state.dados = dados
                                     gerenciador_dados.salvar_dados(dados)
                                     st.rerun()
-                            except AttributeError:
-                                st.warning("Aviso: Chaveamento gerado via fallback genérico do sistema.")
-                                dados['Status'] = 'Mata-Mata'
-                                gerenciador_dados.salvar_dados(dados)
-                                st.rerun()
+                                except Exception as e:
+                                    st.error(f"Erro no Fallback do seu motor: {str(e)}")
+                            except Exception as e:
+                                st.error(f"Erro Crítico ao acionar o motor de chaves: {str(e)}")
                                 
                     elif dados.get('Status') == 'Mata-Mata' or dados.get('Fase') == 'Mata-Mata':
                         st.success("🏆 Todas as mesas eliminatórias da rodada foram concluídas!")
