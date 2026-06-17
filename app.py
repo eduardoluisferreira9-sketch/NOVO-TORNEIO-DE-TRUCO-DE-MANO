@@ -876,35 +876,40 @@ else:
                 
                 col_adm1, col_adm2 = st.columns(2)
                 
-                with col_adm1:
-                    # --- BOTÃO: LANÇAR MANUALLY NO HISTÓRICO ---
+               with col_adm1:
+                    # --- BOTÃO: LANÇAR MANUALLY NO HISTÓRICO (ESTRUTURA CORRIGIDA) ---
                     if st.button("🏆 Forçar Gravação do Pódio na Galeria", use_container_width=True, help="Registra os líderes atuais diretamente no histórico/galeria de forma manual"):
                         try:
                             podio = dados.get('PodioFinal', {})
                             lista_classificada = motor_truco.processar_classificacao(dados)
                             
+                            # Define quem são as 3 duplas/jogadores de forma isolada
                             if podio and podio.get('Campeao'):
-                                txt_campeao = f"🥇 {podio.get('Campeao')} | 🥈 {podio.get('Vice')} | 🥉 {podio.get('Terceiro')}"
+                                c1 = podio.get('Campeao')
+                                c2 = podio.get('Vice')
+                                c3 = podio.get('Terceiro')
                             elif lista_classificada:
                                 c1 = lista_classificada[0]['Nome'] if len(lista_classificada) > 0 else "N/A"
                                 c2 = lista_classificada[1]['Nome'] if len(lista_classificada) > 1 else "N/A"
                                 c3 = lista_classificada[2]['Nome'] if len(lista_classificada) > 2 else "N/A"
-                                txt_campeao = f"🥇 {c1} | 🥈 {c2} | 🥉 {c3}"
                             else:
-                                txt_campeao = "Nenhum competidor pontuado"
+                                c1, c2, c3 = "N/A", "N/A", "N/A"
                                 
                             if 'HistoricoCampeoes' not in dados:
                                 dados['HistoricoCampeoes'] = []
                                 
+                            # 🔥 SALVAMENTO COMPATÍVEL: Chaves mapeadas individualmente para a Aba Galeria ler
                             dados['HistoricoCampeoes'].append({
                                 'Torneio': dados.get('NomeTorneio', 'Torneio de Truco'),
-                                'Campeao': txt_campeao,
+                                'Campeao': c1,
+                                'Vice': c2,
+                                'Terceiro': c3,
                                 'Data': datetime.now().strftime("%d/%m/%Y")
                             })
                             
                             st.session_state.dados = dados
                             gerenciador_dados.salvar_dados(dados)
-                            st.success("🏆 Pódio gravado na galeria com sucesso!")
+                            st.success("🏆 Pódio estruturado e gravado na galeria com sucesso!")
                             time.sleep(1)
                             st.rerun()
                         except Exception as e:
