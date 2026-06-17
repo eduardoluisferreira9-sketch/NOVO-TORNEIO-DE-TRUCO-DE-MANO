@@ -211,7 +211,7 @@ def injetar_cronometro_javascript(key_prefix="default"):
                 var minutos = Math.floor(segundosRestantes / 60);
                 var segundos = segundosRestantes % 60;
                 
-                var strMin = minutos < 10 ? "0" + minutos : minutos;
+                var strMin = minutos < 10 ? "0" + minutes : minutos;
                 var strSeg = segundos < 10 ? "0" + segundos : segundos;
                 
                 if (segundosRestantes < 300) {{
@@ -374,15 +374,16 @@ else:
     ip_local = gerenciador_dados.obter_ip_da_rede()
     st.info(f"🌐 **Rede Local Ativa:** Acesse por outros dispositivos usando: `http://{ip_local}:8501`")
 
+    # CONSTRUÇÃO DO MENU DINÂMICO DE ABAS (ADMINISTRADOR UNIFICADO)
     abas_lista = ["📊 Classificação Geral"]
     
     if dados['Status'] == 'Configuração':
         abas_lista.append("📝 Inscrição Online")
-        
-    if st.session_state.perfil_usuario == "Administrador":
-        if dados['Status'] != 'Configuração' and len(dados.get('Rodadas', [])) > 0:
-            abas_lista.append("⚔️ Lançar Mesas")
-        abas_lista.append("⚙️ Painel de Controle Admin")
+        if st.session_state.perfil_usuario == "Administrador":
+            abas_lista.append("⚙️ Painel Inicial")
+            
+    if dados['Status'] != 'Configuração' and len(dados.get('Rodadas', [])) > 0:
+        abas_lista.append("⚔️ Lançar Mesas") # Única central operacional pós-start
         
     abas_lista.append("🏆 Galeria de Campeões")
     abas_criadas = st.tabs(abas_lista)
@@ -413,7 +414,7 @@ else:
                 st.info("Nenhum competidor inscrito até o momento.")
     aba_index += 1
 
-    # --- 2. ABA: INSCRIÇÃO ONLINE ---
+    # --- 2. ABA: INSCRIÇÃO ONLINE (SÓ APRECE EM CONFIGURAÇÃO) ---
     if "📝 Inscrição Online" in abas_lista:
         with abas_criadas[aba_index]:
             st.markdown("<h2 style='color: #ffbf00 !important;'>📝 Formulário de Inscrição Oficial</h2>", unsafe_allow_html=True)
@@ -436,13 +437,108 @@ else:
                             st.rerun()
         aba_index += 1
 
+    # --- 3. ABA: PAINEL INICIAL DE CONFIGURAÇÃO (SÓ ATIVA ANTES DO START) ---
+    if "⚙️ Painel Inicial" in abas_lista:
+        with abas_criadas[aba_index]:
+            st.markdown("<h2 style='color: #ffbf00 !important;'>⚙️ Configuração Primária do Campeonato</h2>", unsafe_allow_html=True)
+            nome_torneio_input = st.text_input("Nome Principal da Competição:", value=dados.get('NomeTorneio', ''))
+            tempo_limite = st.number_input("Tempo do Cronômetro por Rodada (minutos):", min_value=5, max_value=120, value=int(dados.get('TempoLimiteMinutos', 45)))
+            
+            st.markdown("---")
+            st.markdown("### 👥 Gerenciador Ativo de Inscrições")
+            opcao_cadastro = st.radio("Selecione o método operacional de cadastro:", ["Individual Manual", "🚀 Importação Rápida em Lote (Copia e Cola)"], horizontal=True)
+            
+            if opcao_cadastro == "Individual Manual":
+                col_cad1, col_cad2 = st.columns(2)
+                with col_cad1: novo_nome = st.text_input("Nome do Competidor / Identificação da Dupla:", key="cad_nome").strip().upper()
+                with col_cad2: nova_ent = st.text_input("Entidade / Clube / Cidade de Origem:", key="cad_ent").strip().upper()
+                    
+                if st.button("📥 Cadastrar Competidor Individual"):
+                    if not novo_nome: st.error("Erro: O campo de nome não pode ficar em branco.")
+                    else:
+                        nomes_existentes = [j['Nome'] for j in dados.get('Jogadores', [])]
+                        if novo_nome in nomes_existentes: st.warning(f"Aviso: '{novo_nome}' já se encontra cadastrado.")
+                        else:
+                            ent_f = nova_ent if nova_ent else "MESA"
+                            dados['Jogadores'].append({'Nome': novo_nome, 'Entidade': ent_f})
+                            gerenciador_dados.salvar_dados(dados)
+                            st.success(f"🎉 '{novo_nome}' integrado!")
+                            st.rerun()
+            else:
+                st.markdown("> **Instruções do Lote:** Insira **um competidor por linha**.")
+                entidade_lote = st.text_input("Entidade / Cidade padrão atribuída a este lote:", value="MESA", key="ent_lote").strip().upper()
+                texto_lote = st.text_area("Cole as linhas com os nomes dos competidores aqui:", height=180)
+                
+                if st.button("⚡ Executar Processamento e Cadastro em Massa"):
+                    if not texto_lote.strip(): st.error("Erro: Caixa vazia.")
+                    else:
+                        linhas = [l.strip().upper() for l in texto_lote.split("\n") if l.strip()]
+                        cadastrados_agora = 0
+                        nomes_existentes = [j['Nome'] for j in dados.get('Jogadores', [])]
+                        for linha in linhas:
+                            if linha not in nomes_existentes:
+                                dados['Jogadores'].append({'Nome': linha, 'Entidade': entity_lote})
+                                nomes_existentes.append(linha)
+                                cadastrados_agora += 1
+                        if cadastrados_agora > 0:
+                            gerenciador_dados.salvar_dados(dados)
+                            st.success(f"🔥 Carga Executada! {cadastrados_agora} novos competidores!")
+                            time.sleep(0.5)
+                            st.rerun()
+
+            st.markdown("---")
+            if st.button("🚀 BLOQUEAR INSCRIÇÕES E GERAR CHAVE (START)"):
+                if len(dados.get('Jogadores', [])) < 2:
+                    st.error("Erro Crítico: Mínimo de 2 competidores.")
+                else:
+                    for j in dados['Jogadores']:
+                        j['Pts'] = 0; j['Vit'] = 0; j['SaldoSets'] = 0; j['SetsPró'] = 0
+                        j['SaldoTent'] = 0; j['TentPró'] = 0; j['SaldoFlor'] = 0; j['FlorPró'] = 0
+                        j['Bukes'] = 0; j['Jogos'] = 0
+
+                    dados['NomeTorneio'] = nome_torneio_input if nome_torneio_input else "Torneio de Truco"
+                    dados['TempoLimiteMinutos'] = tempo_limite
+                    dados['Status'] = 'Em Andamento'
+                    dados['RodadaAtual'] = 1
+                    dados['Cronometro'] = {
+                        'TempoRestanteSegundos': tempo_limite * 60,
+                        'Ativo': True,
+                        'FimRodada': False,
+                        'TimestampInicio': time.time()
+                    }
+                    dados['Rodadas'] = []
+                    
+                    try:
+                        primeira_rodada = motor_truco.gerar_rodada_suica(dados, 1)
+                        if primeira_rodada is not None:
+                            dados['Rodadas'].append(primeira_rodada)
+                            gerenciador_dados.salvar_dados(dados)
+                            st.success("Campeonato Oficial Iniciado com Sucesso!")
+                            st.rerun()
+                    except Exception as ex:
+                        st.error(f"❌ Erro ao processar chaveamento: {str(ex)}")
+                        
+            st.markdown("### 👥 Gerenciador Analítico de Inscritos (Exclusão)")
+            if dados.get('Jogadores'):
+                for idx_j, jog in enumerate(dados['Jogadores']):
+                    col_j1, col_j2 = st.columns([3, 1])
+                    with col_j1: st.write(f"👤 {jog['Nome']} — 🏢 {jog['Entidade']}")
+                    with col_j2:
+                        if st.button("❌ Remover", key=f"config_rem_{idx_j}"):
+                            dados['Jogadores'].pop(idx_j)
+                            gerenciador_dados.salvar_dados(dados)
+                            st.rerun()
+        aba_index += 1
+
 
 # ==============================================================================
-# 🖨️ 5ª PARTE: ABA: LANÇAR MESAS (REGRAS OFICIAIS DE PONTUAÇÃO 3X0 / 72X46)
+# ⚔️ 5ª e 6ª PARTE UNIFICADAS: CENTRAL DE LANÇAMENTO E CONTROLE GERAL
 # ==============================================================================
     if "⚔️ Lançar Mesas" in abas_lista:
         with abas_criadas[aba_index]:
+            # TOPO: CRONÔMETRO DO TORNEIO (Sempre Visível)
             injetar_cronometro_javascript(key_prefix="lancador")
+            
             rodada_atual_num = dados['RodadaAtual']
             rodadas_lista = dados.get('Rodadas', [])
             rodada_atual = next((r for r in rodadas_lista if r['Numero'] == rodada_atual_num), None)
@@ -481,6 +577,7 @@ else:
                 html_impressao += "</div>"
                 st.markdown(html_impressao, unsafe_allow_html=True)
                 
+                # CORPO CENTRAL: LISTAGEM DAS MESAS ATIVAS
                 col_mesa1, col_mesa2 = st.columns(2)
                 for idx, m in enumerate(mesas):
                     col_alvo = col_mesa1 if idx % 2 == 0 else col_mesa2
@@ -516,8 +613,10 @@ else:
                             </div>
                         """, unsafe_allow_html=True)
                         
-                        if m['Jogador1'] == "CHAPÉU" or m['Jogador2'] == "CHAPÉU": continue
+                        if m['Jogador1'] == "CHAPÉU" or m['Jogador2'] == "CHAPÉU": 
+                            continue
                             
+                        # FORMULÁRIO OPERACIONAL DE CADA MESA
                         with st.expander(f"📝 Lançar Placar - Mesa {m['Mesa']}"):
                             form_key = f"form_mesa_{m['Mesa']}_{rodada_atual_num}"
                             opcoes_sets = [
@@ -531,22 +630,17 @@ else:
                             
                             t1_int, t2_int = 0, 0
                             
-                            # APLICAÇÃO DA REGRA DE NEGÓCIO EXATA SOLICITADA
                             if escolha_set != "Aguardando...":
                                 if "2 x 0" in escolha_set:
-                                    # Se J1 ganhou de 2x0
                                     if escolha_set.startswith(m['Jogador1']):
                                         st.success(f"🏆 {m['Jogador1']} ganha por 3x0 (72 Tentos fixos).")
                                         t1_int = 72
-                                        # Campo aberto para lançar os tentos do perdedor com limite máximo de 46
                                         t2_int = st.number_input(f"Tentos feitos por {m['Jogador2']} (Máximo 46):", min_value=0, max_value=46, value=0, key=f"t2_{form_key}")
-                                    # Se J2 ganhou de 2x0
                                     else:
                                         st.success(f"🏆 {m['Jogador2']} ganha por 3x0 (72 Tentos fixos).")
                                         t2_int = 72
-                                        # Campo aberto para lançar os tentos do perdedor com limite máximo de 46
                                         t1_int = st.number_input(f"Tentos feitos por {m['Jogador1']} (Máximo 46):", min_value=0, max_value=46, value=0, key=f"t1_{form_key}")
-                                
+                                        
                                 elif "2 x 1" in escolha_set:
                                     col_t1, col_t2 = st.columns(2)
                                     with col_t1: t1_raw = st.text_input(f"Tentos de {m['Jogador1']}", value=str(m.get('TentosJ1', 0)), key=f"t1_{form_key}")
@@ -567,7 +661,6 @@ else:
                                     alvo['FloresJ1'] = f1_num
                                     alvo['FloresJ2'] = f2_num
                                     
-                                    # Executa a gravação estrutural das chaves baseada na escolha
                                     if escolha_set.startswith(alvo['Jogador1']):
                                         alvo['SetsJ1'] = 3 if "2 x 0" in escolha_set else 2
                                         alvo['SetsJ2'] = 0 if "2 x 0" in escolha_set else 1
@@ -589,118 +682,21 @@ else:
                                     st.rerun()
             else:
                 st.info("Nenhum jogo ativo nesta rodada.")
-        aba_index += 1
 
-
-# ==============================================================================
-# ⚙️ 6ª PARTE: PAINEL DE CONTROLE ADMIN COMPLETO (REGRAS DO SISTEMA SUÍÇO)
-# ==============================================================================
-    if "⚙️ Painel de Controle Admin" in abas_lista:
-        with abas_criadas[aba_index]:
-            st.markdown("<h2 style='color: #ffbf00 !important;'>⚙️ Painel do Diretor do Torneio</h2>", unsafe_allow_html=True)
-            
-            if dados['Status'] == 'Configuração':
-                st.markdown("### 🏷️ Definições Gerais do Campeonato")
-                nome_torneio_input = st.text_input("Nome Principal da Competição:", value=dados.get('NomeTorneio', ''))
-                tempo_limite = st.number_input("Tempo do Cronômetro por Rodada (minutos):", min_value=5, max_value=120, value=int(dados.get('TempoLimiteMinutos', 45)))
-                
-                st.markdown("---")
-                st.markdown("### 👥 Gerenciador Ativo de Inscrições")
-                opcao_cadastro = st.radio("Selecione o método operacional de cadastro:", ["Individual Manual", "🚀 Importação Rápida em Lote (Copia e Cola)"], horizontal=True)
-                
-                if opcao_cadastro == "Individual Manual":
-                    col_cad1, col_cad2 = st.columns(2)
-                    with col_cad1: novo_nome = st.text_input("Nome do Competidor / Identificação da Dupla:", key="cad_nome").strip().upper()
-                    with col_cad2: nova_ent = st.text_input("Entidade / Clube / Cidade de Origem:", key="cad_ent").strip().upper()
-                        
-                    if st.button("📥 Cadastrar Competidor Individual"):
-                        if not novo_nome: st.error("Erro: O campo de nome não pode ficar em branco.")
-                        else:
-                            nomes_existentes = [j['Nome'] for j in dados.get('Jogadores', [])]
-                            if novo_nome in nomes_existentes: st.warning(f"Aviso: '{novo_nome}' já se encontra cadastrado.")
-                            else:
-                                ent_f = nova_ent if nova_ent else "MESA"
-                                dados['Jogadores'].append({'Nome': novo_nome, 'Entidade': ent_f})
-                                gerenciador_dados.salvar_dados(dados)
-                                st.success(f"🎉 '{novo_nome}' integrado!")
-                                st.rerun()
-                else:
-                    st.markdown("> **Instruções do Lote:** Insira **um competidor por linha**.")
-                    entidade_lote = st.text_input("Entidade / Cidade padrão atribuída a este lote:", value="MESA", key="ent_lote").strip().upper()
-                    texto_lote = st.text_area("Cole as linhas com os nomes dos competidores aqui:", height=180)
-                    
-                    if st.button("⚡ Executar Processamento e Cadastro em Massa"):
-                        if not texto_lote.strip(): st.error("Erro: Caixa vazia.")
-                        else:
-                            linhas = [l.strip().upper() for l in texto_lote.split("\n") if l.strip()]
-                            cadastrados_agora = 0
-                            nomes_existentes = [j['Nome'] for j in dados.get('Jogadores', [])]
-                            for linha in linhas:
-                                if linha not in nomes_existentes:
-                                    dados['Jogadores'].append({'Nome': linha, 'Entidade': entidade_lote})
-                                    nomes_existentes.append(linha)
-                                    cadastrados_agora += 1
-                            if cadastrados_agora > 0:
-                                gerenciador_dados.salvar_dados(dados)
-                                st.success(f"🔥 Carga Executada! {cadastrados_agora} novos competidores!")
-                                time.sleep(0.5)
-                                st.rerun()
-
-                st.markdown("---")
-                if st.button("🚀 BLOQUEAR INSCRIÇÕES E GERAR CHAVE (START)"):
-                    if len(dados.get('Jogadores', [])) < 2:
-                        st.error("Erro Crítico: Mínimo de 2 competidores.")
-                    else:
-                        for j in dados['Jogadores']:
-                            j['Pts'] = 0; j['Vit'] = 0; j['SaldoSets'] = 0; j['SetsPró'] = 0
-                            j['SaldoTent'] = 0; j['TentPró'] = 0; j['SaldoFlor'] = 0; j['FlorPró'] = 0
-                            j['Bukes'] = 0; j['Jogos'] = 0
-
-                        dados['NomeTorneio'] = nome_torneio_input if nome_torneio_input else "Torneio de Truco"
-                        dados['TempoLimiteMinutos'] = tempo_limite
-                        dados['Status'] = 'Em Andamento'
-                        dados['RodadaAtual'] = 1
-                        dados['Cronometro'] = {
-                            'TempoRestanteSegundos': tempo_limite * 60,
-                            'Ativo': True,
-                            'FimRodada': False,
-                            'TimestampInicio': time.time()
-                        }
-                        dados['Rodadas'] = []
-                        
-                        try:
-                            primeira_rodada = motor_truco.gerar_rodada_suica(dados, 1)
-                            if primeira_rodada is not None:
-                                dados['Rodadas'].append(primeira_rodada)
-                                gerenciador_dados.salvar_dados(dados)
-                                st.success("Campeonato Oficial Iniciado com Sucesso!")
-                                st.rerun()
-                        except Exception as ex:
-                            st.error(f"❌ Erro ao processar chaveamento: {str(ex)}")
-                        
-                st.markdown("### 👥 Gerenciador Analítico de Inscritos (Exclusão)")
-                if dados.get('Jogadores'):
-                    for idx_j, jog in enumerate(dados['Jogadores']):
-                        col_j1, col_j2 = st.columns([3, 1])
-                        with col_j1: st.write(f"👤 {jog['Nome']} — 🏢 {jog['Entidade']}")
-                        with col_j2:
-                            if st.button("❌ Remover", key=f"rem_{idx_j}"):
-                                dados['Jogadores'].pop(idx_j)
-                                gerenciador_dados.salvar_dados(dados)
-                                st.rerun()
-                                
-            elif dados['Status'] == 'Em Andamento':
-                st.info("🔒 **Inscrições Trancadas:** O torneio está ativo.")
-                st.markdown(f"### 🛡️ Cronômetro da Arena — Rodada {dados['RodadaAtual']}")
-                
-                injetar_cronometro_javascript(key_prefix="admin")
+            # ==================================================================
+            # ⚙️ RODAPÉ: PAINEL DO DIRETOR INTEGADO (EXCLUSIVO ADMINISTRADOR)
+            # ==================================================================
+            if st.session_state.perfil_usuario == "Administrador":
+                st.markdown("<br><hr>", unsafe_allow_html=True)
+                st.markdown("### ⚙️ Painel de Controle de Mesa do Diretor")
                 
                 restante_real, c_dados = obter_tempo_restante_dinamico()
                 c_ativo = c_dados.get('Ativo', False)
                 
+                # CONTROLES DO CRONÔMETRO HÍBRIDO
                 col_btn1, col_btn2 = st.columns(2)
                 with col_btn1:
-                    if st.button("⏸️ Congelar Cronômetro" if c_ativo else "▶️ Ativar Cronômetro"):
+                    if st.button("⏸️ Congelar Cronômetro" if c_ativo else "▶️ Ativar Cronômetro", use_container_width=True):
                         if c_ativo:
                             dados['Cronometro']['TempoRestanteSegundos'] = restante_real
                             dados['Cronometro']['Ativo'] = False
@@ -709,11 +705,10 @@ else:
                             dados['Cronometro']['TempoRestanteSegundos'] = restante_real
                             dados['Cronometro']['Ativo'] = True
                             dados['Cronometro']['TimestampInicio'] = time.time()
-                            
                         gerenciador_dados.salvar_dados(dados)
                         st.rerun()
                 with col_btn2:
-                    if st.button("🔄 Reiniciar Tempo Padrão"):
+                    if st.button("🔄 Reiniciar Tempo Padrão", use_container_width=True):
                         dados['Cronometro']['TempoRestanteSegundos'] = dados['TempoLimiteMinutos'] * 60
                         dados['Cronometro']['FimRodada'] = False
                         if dados['Cronometro']['Ativo']:
@@ -722,43 +717,69 @@ else:
                         st.rerun()
                 
                 st.markdown("---")
-                rodadas_lista = dados.get('Rodadas', [])
-                rodada_atual = next((r for r in rodadas_lista if r['Numero'] == dados['RodadaAtual']), None)
+                
+                # VERIFICAÇÃO DE CONCLUSÃO DE TODAS AS MESAS
                 todas_concluidas = True
                 if rodada_atual:
                     for m in rodada_atual.get('Mesas', []):
-                        if m['Status'] != 'Concluído': todas_concluidas = False
+                        if m['Status'] != 'Concluído': 
+                            todas_concluidas = False
                 
+                # LÓGICA DE TRANSIÇÃO E CONTROLE DAS RODADAS
                 if todas_concluidas:
-                    if st.button("🏁 CONCLUIR RODADA E RODAR NOVO EMPARELHAMENTO"):
-                        dados['RodadaAtual'] += 1
-                        nova_rodada = motor_truco.gerar_rodada_suica(dados, dados['RodadaAtual'])
-                        if nova_rodada is None:
-                            dados['Status'] = 'Finalizado'
-                            classificacao = motor_truco.processar_classificacao(dados)
-                            if classificacao:
-                                dados['HistoricoCampeoes'].append({
-                                    'Torneio': dados['NomeTorneio'],
-                                    'Campeao': classificacao[0]['Nome'],
-                                    'Data': datetime.now().strftime("%d/%m/%Y")
-                                })
-                        else:
-                            dados['Rodadas'].append(nova_rodada)
-                            dados['Cronometro'] = {
-                                'TempoRestanteSegundos': dados['TempoLimiteMinutos'] * 60,
-                                'Ativo': True,
-                                'FimRodada': False,
-                                'TimestampInicio': time.time()
-                            }
-                        gerenciador_dados.salvar_dados(dados)
-                        st.rerun()
+                    # REGRA: SE CHEGOU NA ÚLTIMA RODADA DO SUIÇO (RODADA 5)
+                    if dados['RodadaAtual'] >= 5:
+                        st.success("🏁 **Rodada 5 do Sistema Suíço Concluída!** O corte para o Mata-Mata está liberado.")
+                        
+                        tamanho_mata_mata = st.selectbox(
+                            "Escolha o tamanho do chaveamento eliminatório:",
+                            ["32-Avos de Final (Top 64)", "Dezesseis-Avos de Final (Top 32)", "Oitavas de Final (Top 16)", "Quartas de Final (Top 8)", "Semifinal (Top 4)"],
+                            key="sel_tamanho_playoffs"
+                        )
+                        
+                        if st.button("🏆 Iniciar Fase Eliminatória (Mata-Mata) 🔥", type="primary", use_container_width=True):
+                            # Mapeamento do seletor para salvar no estado de chaves
+                            dados['Status'] = 'Mata-Mata'
+                            dados['RodadaAtual'] += 1
+                            # Aqui você pode chamar a lógica do seu motor_truco para gerar o mata-mata correspondente
+                            gerenciador_dados.salvar_dados(dados)
+                            st.success("Playoffs Gerados!")
+                            st.rerun()
+                    else:
+                        # PROGRESSÃO PADRÃO DO SUÍÇO (BLOQUEADO EM 5)
+                        if st.button("🏁 CONCLUIR RODADA E RODAR NOVO EMPARELHAMENTO", type="primary", use_container_width=True):
+                            dados['RodadaAtual'] += 1
+                            nova_rodada = motor_truco.gerar_rodada_suica(dados, dados['RodadaAtual'])
+                            if nova_rodada is None:
+                                dados['Status'] = 'Finalizado'
+                                classificacao = motor_truco.processar_classificacao(dados)
+                                if classificacao:
+                                    dados['HistoricoCampeoes'].append({
+                                        'Torneio': dados['NomeTorneio'],
+                                        'Campeao': classificacao[0]['Nome'],
+                                        'Data': datetime.now().strftime("%d/%m/%Y")
+                                    })
+                            else:
+                                dados['Rodadas'].append(nova_rodada)
+                                dados['Cronometro'] = {
+                                    'TempoRestanteSegundos': dados['TempoLimiteMinutos'] * 60,
+                                    'Ativo': True,
+                                    'FimRodada': False,
+                                    'TimestampInicio': time.time()
+                                }
+                            gerenciador_dados.salvar_dados(dados)
+                            st.rerun()
                 else:
-                    st.warning("🔒 Bloqueio: Há mesas pendentes nesta rodada.")
+                    st.warning("🔒 **Aviso do Diretor:** Lançamento de novos chaveamentos bloqueado até todas as mesas ficarem prontas.")
+                
+                # ZERAR FLUXO COMPLETO
+                st.markdown("<br>", unsafe_allow_html=True)
+                if st.button("🚨 PURGAR BANCO DE DADOS (Zerar Todo o Sistema)", use_container_width=True):
+                    gerenciador_dados.limpar_banco_dados()
+                    if 'dados' in st.session_state: 
+                        del st.session_state.dados
+                    st.rerun()
                     
-            if st.button("🚨 PURGAR BANCO DE DADOS (Zerar Todo o Sistema)"):
-                gerenciador_dados.limpar_banco_dados()
-                if 'dados' in st.session_state: del st.session_state.dados
-                st.rerun()
         aba_index += 1
 
     # --- 7. ABA: GALERIA DE CAMPEÕES ---
